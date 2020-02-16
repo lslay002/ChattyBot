@@ -5,6 +5,7 @@
 #setup
 import discord
 import asyncio
+import os
 from discord.utils import get
 
 client = discord.Client() 
@@ -23,6 +24,6 @@ async def on_reaction_remove(reaction, user):
 
 #runs the app
 if __name__ == '__main__':
-    client.run('Njc4MjYwNDEyNTQxODI5MTMw.XkgV2Q.KC7ciXL3ymkKfio-dF42dFSut3w') #Discord TOKEN string
+    client.run(os.environ.get('TOKEN'))
 
 #Last published February 15th, 2020
