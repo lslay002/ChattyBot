@@ -23,6 +23,6 @@ async def on_reaction_remove(reaction, user):
 
 #runs the app
 if __name__ == '__main__':
-    client.run('Njc4MjYwNDEyNTQxODI5MTMw.XkgV2Q.KC7ciXL3ymkKfio-dF42dFSut3w')
+    client.run('Njc4MjYwNDEyNTQxODI5MTMw.XkgV2Q.KC7ciXL3ymkKfio-dF42dFSut3w') #Discord TOKEN string
 
 #Last published February 15th, 2020
