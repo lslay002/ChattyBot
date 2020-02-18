@@ -44,7 +44,7 @@ async def on_message(msg):
     # Handle commands
     if not msg.author.bot and msg.channel.id == COMMANDCHNNUM:
         if get(msg.author.roles, name = MODROLE):
-            print 'Command Recieved'
+            print('Command Recieved')
             commandChn.send('What do I do with this?')
         return
         
