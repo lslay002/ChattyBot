@@ -46,7 +46,7 @@ async def on_message(msg):
     if not msg.author.bot and msg.channel.id == COMMANDCHNNUM:
         if get(msg.author.roles, name = MODROLE):
             print('Command Recieved')
-            commandChn.send('What do I do with this?')
+            await commandChn.send('What do I do with this?')
         return
         
     # If from a bot or the mods, ignore
@@ -64,26 +64,26 @@ async def on_message(msg):
         warnmess.add_field(name = 'User', value = msg.author)
         warnmess.add_field(name = 'Words Used', value = cdw)
         warnmess.add_field(name = 'Message Link', value = msg.jump_url)
-        commandChn.send(embed = warnmess)
+        await commandChn.send(embed = warnmess)
 
     # Check mentions of a message and send messages when needed
     print(msg.role_mentions)
     for mention in msg.role_mentions:
         val = str(mention.id)
         if val in mention_dict:
-            msg.channel.send(mention_dict[val])
+            await msg.channel.send(mention_dict[val])
 
 #If a user with the Max Host role adds a :pushpin: (📌) reaction to a message, the message will be pinned
 @client.event
 async def on_reaction_add(reaction, user):
     if get(user.roles, name = "Max Host") and reaction.emoji == '📌':
-        reaction.message.pin()
+        await reaction.message.pin()
 
 #If a user with the Max Host role removes a :pushpin: (📌) reaction from the message, the message will be unpinned
 @client.event
 async def on_reaction_remove(reaction, user):
     if  get(user.roles, name = "Max Host") and reaction.emoji == '📌':
-        reaction.message.unpin()
+        await reaction.message.unpin()
 
 #When bot is ready, open the commad channel
 @client.event
@@ -93,7 +93,7 @@ async def on_ready():
     print(client.user.id)
     print('------')
     commandChn = client.get_channel(COMMANDCHNNUM)
-    pring(commandChn)
+    print(commandChn)
 
 #runs the app
 if __name__ == '__main__':
