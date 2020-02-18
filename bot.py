@@ -82,6 +82,7 @@ async def on_reaction_remove(reaction, user):
         reaction.message.unpin()
 
 #When bot is ready, open the commad channel
+@client.event
 async def on_ready():
     print('Logged in as')
     print(client.user.name)
