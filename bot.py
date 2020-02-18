@@ -69,7 +69,7 @@ async def on_message(msg):
     # Check mentions of a message and send messages when needed
     print(msg.role_mentions)
     for mention in msg.role_mentions:
-        if str mention.id in mention_dict:
+        if str(mention.id) in mention_dict:
             msg.channel.send(mention_dict[mention.id])
 
 #If a user with the Max Host role adds a :pushpin: (📌) reaction to a message, the message will be pinned
