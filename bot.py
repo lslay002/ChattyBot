@@ -71,7 +71,7 @@ async def on_message(msg):
     for mention in msg.role_mentions:
         val = str(mention.id)
         if val in mention_dict:
-            await msg.channel.send(mention_dict[val])
+            await msg.channel.send(mention_dict[val][0])
 
 #If a user with the Max Host role adds a :pushpin: (📌) reaction to a message, the message will be pinned
 @client.event
@@ -92,6 +92,7 @@ async def on_ready():
     print(client.user.name)
     print(client.user.id)
     print('------')
+    global commandChn
     commandChn = client.get_channel(COMMANDCHNNUM)
     print(commandChn)
 
