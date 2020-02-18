@@ -56,6 +56,7 @@ async def on_message(msg):
     dangerwords = filter(composedwarning.match, msg.content.split())
 
     cdw = ', '.join(map(str, dangerwords))
+    print(cdw)
     if cdw != '':
         warnmess = discord.Embed()
         warnmess.title = 'Warning Report'
@@ -65,6 +66,7 @@ async def on_message(msg):
         commandChn.send(embed = warnmess)
 
     # Check mentions of a message and send messages when needed
+    print(msg.role_mentions)
     for mention in msg.role_mentions:
         if mention.id in mention_dict:
             msg.channel.send(mention_dict[mention.id])
