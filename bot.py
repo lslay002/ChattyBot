@@ -20,13 +20,14 @@ def loadMentions():
             tt = line.split('|')
             key, rest = tt[0], tt[1:]
             tmpm[key] = rest
+    print(tmpm)
     return tmpm
 
 warninglist = ['test', r'part.*']
 mention_dict = loadMentions()
 
 client = discord.Client()
-commandChn = None
+commandChn = 3
 
 #Helper function to help create the warnings
 def composeWarning(values):
