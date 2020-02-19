@@ -55,24 +55,28 @@ async def on_message(msg):
             if len(splitmes) == 0:
                 return
             
-            if splitmes[0] == 'get':
+            if splitmes[0] == ';get':
                 await commandChn.send(', '.join(map(str, warninglist)))
-            elif splitmes[0] == 'set':
+            elif splitmes[0] == ';set':
                 if len(splitmes) == 1:
                     await commandChn.send('What word or regular expression would you like to be notified of?')
                     return
                 warninglist.append(splitmes[1])
                 db.run("INSERT INTO forbidden VALUES (%(new)s)", new = splitmes[1])
                 composedwarning = composeWarning(warninglist)
-            elif splitmes[0] == 'rm':
+                await commandChn.send('Word added.')
+            elif splitmes[0] == ';rm':
                 if len(splitmes) == 1:
                     await commandChn.send('What word or regular expression would you like to not be notified of?')
                     return
                 warninglist.remove(splitmes[1])
                 db.run("DELETE FROM forbidden WHERE words=(%(old)s)", old = splitmes[1])
                 composedwarning = composeWarning(warninglist)
-            else:
-                await commandChn.send('What do I do with this?')
+                await commandChn.send('Word removed.')
+            elif splitmes[0] == ';help':
+                await commandChn.send(';get - What words are being watched for.\n;set - Add a word.\n;rm - Remove a word.')
+            #else:
+            #    await commandChn.send('What do I do with this?')
         return
         
     # If from a bot or the mods, ignore
