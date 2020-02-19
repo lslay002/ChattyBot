@@ -118,6 +118,7 @@ async def on_ready():
     warninglist = db.all('SELECT words FROM forbidden')
     composedwarning = composeWarning(warninglist)
     print('Logged in as ' + client.user.name)
+    print(COMMANDCHNNUM)
     print(commandChn)
     print(composedwarning)
 
