@@ -23,11 +23,10 @@ def loadMentions():
             tmpm[key] = rest
     return tmpm
 
-warninglist = ['test', r'part.*']
+warninglist = []
 mention_dict = loadMentions()
 db = postgres.Postgres(url = os.environ.get('DATABASE_URL'))
 db.run("CREATE TABLE IF NOT EXISTS forbidden (words text)")
-db.run("INSERT INTO forbidden VALUES (%(new)s)", new = 'testy')
 
 client = discord.Client()
 commandChn = None
@@ -50,7 +49,7 @@ async def on_message(msg):
                 
     if not msg.author.bot and msg.channel.id == COMMANDCHNNUM:
         if get(msg.author.roles, name = MODROLE):
-            print('Command Recieved')
+            #print('Command Recieved')
             splitmes = msg.content.split()
             
             if len(splitmes) == 0:
@@ -118,9 +117,6 @@ async def on_ready():
     warninglist = db.all('SELECT words FROM forbidden')
     composedwarning = composeWarning(warninglist)
     print('Logged in as ' + client.user.name)
-    print(COMMANDCHNNUM)
-    print(commandChn)
-    print(composedwarning)
 
 #runs the app
 if __name__ == '__main__':
