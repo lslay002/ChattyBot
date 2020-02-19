@@ -27,6 +27,7 @@ warninglist = ['test', r'part.*']
 mention_dict = loadMentions()
 db = postgres.Postgres(url = os.environ.get('DATABASE_URL'))
 db.run("CREATE TABLE IF NOT EXISTS forbidden (words text)")
+db.run("INSERT INTO forbidden VALUES (%(new)s)", new = 'testy')
 
 client = discord.Client()
 commandChn = None
@@ -83,7 +84,6 @@ async def on_message(msg):
     dangerwords = filter(composedwarning.match, msg.content.split())
 
     cdw = ', '.join(map(str, dangerwords))
-    print(cdw)
     if cdw != '':
         warnmess = discord.Embed()
         warnmess.title = 'Warning Report'
@@ -118,6 +118,8 @@ async def on_ready():
     warninglist = db.all('SELECT words FROM forbidden')
     composedwarning = composeWarning(warninglist)
     print('Logged in as ' + client.user.name)
+    print(commandChn)
+    print(composedwarning)
 
 #runs the app
 if __name__ == '__main__':
