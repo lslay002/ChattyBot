@@ -45,6 +45,8 @@ composedwarning = composeWarning(warninglist)
 @client.event
 async def on_message(msg):
     # Handle commands
+    global warninglist, composedwarning
+                
     if not msg.author.bot and msg.channel.id == COMMANDCHNNUM:
         if get(msg.author.roles, name = MODROLE):
             print('Command Recieved')
@@ -59,7 +61,6 @@ async def on_message(msg):
                 if len(splitmes) == 1:
                     await commandChn.send('What word or regular expression would you like to be notified of?')
                     return
-                global warninglist, composedwarning
                 warninglist.append(splitmes[1])
                 db.run("INSERT INTO forbidden VALUES (%(new)s)", new = splitmes[1])
                 composedwarning = composeWarning(warninglist)
@@ -67,7 +68,6 @@ async def on_message(msg):
                 if len(splitmes) == 1:
                     await commandChn.send('What word or regular expression would you like to not be notified of?')
                     return
-                global warninglist, composedwarning
                 warninglist.remove(splitmes[1])
                 db.run("DELETE FROM forbidden WHERE words=(%(old)s)", old = splitmes[1])
                 composedwarning = composeWarning(warninglist)
