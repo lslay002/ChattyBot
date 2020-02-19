@@ -12,7 +12,7 @@ from discord.utils import get
 
 # Establish settings and IO helpers
 MODROLE = "Mods"
-COMMANDCHNNUM = os.environ.get('COMMANDCHN')
+COMMANDCHNNUM = int(os.environ.get('COMMANDCHN'))
 
 def loadMentions():
     tmpm = {}
