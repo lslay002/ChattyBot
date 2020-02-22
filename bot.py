@@ -35,7 +35,7 @@ commandChn = None
 def composeWarning(values):
     temp = '|'.join(map(str, values))
     temp = '(' + temp + r')\Z'
-    return re.compile(temp)
+    return re.compile(temp, re.I)
 
 #Composed awarning (a regex object)
 composedwarning = composeWarning(warninglist)
@@ -56,7 +56,7 @@ async def on_message(msg):
                 return
             
             if splitmes[0] == ';get':
-                await commandChn.send(', '.join(map(str, warninglist)))
+                await commandChn.send(', '.join(map(lambda x: '`' + x + '`', warninglist)))
             elif splitmes[0] == ';set':
                 if len(splitmes) == 1:
                     await commandChn.send('What word or regular expression would you like to be notified of?')
