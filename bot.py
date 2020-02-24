@@ -103,17 +103,25 @@ async def on_message(msg):
 
 #If a user with the Max Host role adds a :pushpin: (📌) reaction to a message, the message will be pinned
 @client.event
-async def on_reaction_add(reaction, user):
-    if get(user.roles, name = "Max Host") and reaction.emoji == '📌':
-        await reaction.message.pin()
+async def on_raw_reaction_add(payload):
+	guild = await client.fetch_guild(guild_id = payload.guild_id)
+	member = await guild.fetch_member(member_id = payload.user_id)
+	channel = client.get_channel(id = payload.channel_id)
+	message = await channel.fetch_message(id = payload.message_id)
+	if payload.emoji.name == "📌" and get(member.roles, name = "Max Host"):
+		await message.pin()
 
 #If a user with the Max Host role removes a :pushpin: (📌) reaction from the message, the message will be unpinned
 @client.event
-async def on_reaction_remove(reaction, user):
-    if  get(user.roles, name = "Max Host") and reaction.emoji == '📌':
-        await reaction.message.unpin()
+async def on_raw_reaction_remove(payload):
+	guild = await client.fetch_guild(guild_id = payload.guild_id)
+	member = await guild.fetch_member(member_id = payload.user_id)
+	channel = client.get_channel(id = payload.channel_id)
+	message = await channel.fetch_message(id = payload.message_id)
+	if payload.emoji.name == "📌" and get(member.roles, name = "Max Host"):
+		await message.unpin()
 
-#When bot is ready, open the commad channel
+#When bot is ready, open the command channel
 @client.event
 async def on_ready():
     global commandChn, warninglist, composedwarning
@@ -125,4 +133,3 @@ async def on_ready():
 #runs the app
 if __name__ == '__main__':
     client.run(os.environ.get('TOKEN'))
-
