@@ -34,8 +34,8 @@ commandChn = None
 #Helper function to help create the warnings
 def composeWarning(values):
     temp = '|'.join(map(str, values))
-    temp = '(' + temp + r')\Z'
-    return re.compile(temp)
+    temp = r'\W*(' + temp + r')\W*\Z'
+    return re.compile(temp, re.I)
 
 #Composed awarning (a regex object)
 composedwarning = composeWarning(warninglist)
@@ -56,7 +56,7 @@ async def on_message(msg):
                 return
             
             if splitmes[0] == ';get':
-                await commandChn.send(', '.join(map(str, warninglist)))
+                await commandChn.send(', '.join(map(lambda x: '`' + x + '`', warninglist)))
             elif splitmes[0] == ';set':
                 if len(splitmes) == 1:
                     await commandChn.send('What word or regular expression would you like to be notified of?')
@@ -103,17 +103,25 @@ async def on_message(msg):
 
 #If a user with the Max Host role adds a :pushpin: (📌) reaction to a message, the message will be pinned
 @client.event
-async def on_reaction_add(reaction, user):
-    if get(user.roles, name = "Max Host") and reaction.emoji == '📌':
-        await reaction.message.pin()
+async def on_raw_reaction_add(payload):
+    guild = await client.fetch_guild(guild_id = payload.guild_id)
+    member = await guild.fetch_member(member_id = payload.user_id)
+    if payload.emoji.name == "📌" and get(member.roles, name = "Max Host"):
+        channel = client.get_channel(id = payload.channel_id)
+        message = await channel.fetch_message(id = payload.message_id)
+        await message.pin()
 
 #If a user with the Max Host role removes a :pushpin: (📌) reaction from the message, the message will be unpinned
 @client.event
-async def on_reaction_remove(reaction, user):
-    if  get(user.roles, name = "Max Host") and reaction.emoji == '📌':
-        await reaction.message.unpin()
+async def on_raw_reaction_remove(payload):
+    guild = await client.fetch_guild(guild_id = payload.guild_id)
+    member = await guild.fetch_member(member_id = payload.user_id)
+    if payload.emoji.name == "📌" and get(member.roles, name = "Max Host"):
+        channel = client.get_channel(id = payload.channel_id)
+        message = await channel.fetch_message(id = payload.message_id)
+        await message.unpin()
 
-#When bot is ready, open the commad channel
+#When bot is ready, open the command channel
 @client.event
 async def on_ready():
     global commandChn, warninglist, composedwarning
@@ -125,4 +133,3 @@ async def on_ready():
 #runs the app
 if __name__ == '__main__':
     client.run(os.environ.get('TOKEN'))
-
