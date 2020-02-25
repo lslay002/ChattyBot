@@ -34,7 +34,7 @@ commandChn = None
 #Helper function to help create the warnings
 def composeWarning(values):
     temp = '|'.join(map(str, values))
-    temp = '(' + temp + r')\Z'
+    temp = r'\W(' + temp + r')\W\Z'
     return re.compile(temp, re.I)
 
 #Composed awarning (a regex object)
@@ -104,22 +104,20 @@ async def on_message(msg):
 #If a user with the Max Host role adds a :pushpin: (📌) reaction to a message, the message will be pinned
 @client.event
 async def on_raw_reaction_add(payload):
-	guild = await client.fetch_guild(guild_id = payload.guild_id)
-	member = await guild.fetch_member(member_id = payload.user_id)
-	channel = client.get_channel(id = payload.channel_id)
-	message = await channel.fetch_message(id = payload.message_id)
-	if payload.emoji.name == "📌" and get(member.roles, name = "Max Host"):
-		await message.pin()
+    guild = await client.fetch_guild(guild_id = payload.guild_id)
+    member = await guild.fetch_member(member_id = payload.user_id)
+    if payload.emoji.name == "📌" and get(member.roles, name = "Max Host"):
+        channel = client.get_channel(id = payload.channel_id)
+        message = await channel.fetch_message(id = payload.message_id)
 
 #If a user with the Max Host role removes a :pushpin: (📌) reaction from the message, the message will be unpinned
 @client.event
 async def on_raw_reaction_remove(payload):
-	guild = await client.fetch_guild(guild_id = payload.guild_id)
-	member = await guild.fetch_member(member_id = payload.user_id)
-	channel = client.get_channel(id = payload.channel_id)
-	message = await channel.fetch_message(id = payload.message_id)
-	if payload.emoji.name == "📌" and get(member.roles, name = "Max Host"):
-		await message.unpin()
+    guild = await client.fetch_guild(guild_id = payload.guild_id)
+    member = await guild.fetch_member(member_id = payload.user_id)
+    if payload.emoji.name == "📌" and get(member.roles, name = "Max Host"):
+        channel = client.get_channel(id = payload.channel_id)
+        message = await channel.fetch_message(id = payload.message_id)
 
 #When bot is ready, open the command channel
 @client.event
