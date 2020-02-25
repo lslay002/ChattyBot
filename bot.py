@@ -109,6 +109,7 @@ async def on_raw_reaction_add(payload):
     if payload.emoji.name == "📌" and get(member.roles, name = "Max Host"):
         channel = client.get_channel(id = payload.channel_id)
         message = await channel.fetch_message(id = payload.message_id)
+        await message.pin()
 
 #If a user with the Max Host role removes a :pushpin: (📌) reaction from the message, the message will be unpinned
 @client.event
@@ -118,6 +119,7 @@ async def on_raw_reaction_remove(payload):
     if payload.emoji.name == "📌" and get(member.roles, name = "Max Host"):
         channel = client.get_channel(id = payload.channel_id)
         message = await channel.fetch_message(id = payload.message_id)
+        await message.unpin()
 
 #When bot is ready, open the command channel
 @client.event
