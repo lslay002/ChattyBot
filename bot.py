@@ -34,7 +34,7 @@ commandChn = None
 #Helper function to help create the warnings
 def composeWarning(values):
     temp = '|'.join(map(str, values))
-    temp = r'\W(' + temp + r')\W\Z'
+    temp = r'\W*(' + temp + r')\W*\Z'
     return re.compile(temp, re.I)
 
 #Composed awarning (a regex object)
