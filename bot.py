@@ -47,7 +47,7 @@ async def on_message(msg):
     # Handle commands
     global warninglist, composedwarning
 
-    if msg.channel.type == discord.ChannelType.private:
+    if not msg.author.bot and msg.channel.type == discord.ChannelType.private:
         warnmess = discord.Embed()
         warnmess.title = 'User Report'
         warnmess.add_field(name = 'User', value = msg.author)
