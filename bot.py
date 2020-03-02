@@ -46,6 +46,16 @@ composedwarning = composeWarning(warninglist)
 async def on_message(msg):
     # Handle commands
     global warninglist, composedwarning
+
+    if not msg.author.bot and msg.channel.type == discord.ChannelType.private:
+        warnmess = discord.Embed()
+        warnmess.title = 'User Report'
+        warnmess.add_field(name = 'User', value = msg.author)
+        warnmess.add_field(name = 'ID', value = msg.author.id)
+        warnmess.add_field(name = 'Report Contents', value = msg.content, inline = False)
+        warnmess.set_footer(text = 'To reply to a user with a message from Chatty, use ;send <UserID> <Message>')
+        await commandChn.send(embed = warnmess)
+        return
                 
     if not msg.author.bot and msg.channel.id == COMMANDCHNNUM:
         if get(msg.author.roles, name = MODROLE):
@@ -73,8 +83,28 @@ async def on_message(msg):
                 db.run("DELETE FROM forbidden WHERE words=(%(old)s)", old = splitmes[1])
                 composedwarning = composeWarning(warninglist)
                 await commandChn.send('Word removed.')
+            elif splitmes[0] == ';send':
+                if len(splitmes) == 1:
+                    await commandChn.send('Who would you like to send a message to?')
+                    return
+                if len(splitmes) == 2:
+                    await commandChn.send('What message would you like to send?')
+                    return
+                if not str(splitmes[1]).isdigit():
+                    await commandChn.send('Please use a UserID as a target of who to send to.')
+                    return
+                target = client.get_user(int(splitmes[1]))
+                if target == None:
+                    await commandChn.send('User not found.')
+                    return
+                targetchn = target.dm_channel
+                if targetchn == None:
+                    await target.create_dm()
+                    targetchn = target.dm_channel
+                await targetchn.send(' '.join(splitmes[2:]))
+                await commandChn.send('Message sent.')
             elif splitmes[0] == ';help':
-                await commandChn.send(';get - What words are being watched for.\n;set - Add a word.\n;rm - Remove a word.')
+                await commandChn.send(';get - What words are being watched for.\n;set - Add a word.\n;rm - Remove a word.\n;send <UserID> <Message> - Send a message to a user with Chatty')
             #else:
             #    await commandChn.send('What do I do with this?')
         return
@@ -92,7 +122,7 @@ async def on_message(msg):
         warnmess.title = 'Warning Report'
         warnmess.add_field(name = 'User', value = msg.author)
         warnmess.add_field(name = 'Words Used', value = cdw)
-        warnmess.add_field(name = 'Message Link', value = msg.jump_url)
+        warnmess.add_field(name = 'Message Link', value = msg.jump_url, inline = False)
         await commandChn.send(embed = warnmess)
 
     # Check mentions of a message and send messages when needed
