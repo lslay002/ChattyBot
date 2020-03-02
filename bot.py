@@ -46,6 +46,20 @@ composedwarning = composeWarning(warninglist)
 async def on_message(msg):
     # Handle commands
     global warninglist, composedwarning
+  
+    # Open the keywords text file
+    with open('./data/keywords.txt','r') as file:
+        keywordsFile = file.read().split(' | ')
+        
+    # Check user messages for keywords in the trading channel, ignores messages from the bot itself
+    for keywords in keywordsFile:
+        if msg.author == client.user:
+            return
+        elif msg.channel.name == 'trading' and keywords in msg.content.lower():
+            user = msg.author
+            channel = client.get_channel(654809293543047199)       
+            await msg.delete()
+            await channel.send("{}".format(user.mention) + ' Trades for shinies, legendaries, and dittos are not allowed here. Please read the pinned messages.')
                 
     if not msg.author.bot and msg.channel.id == COMMANDCHNNUM:
         if get(msg.author.roles, name = MODROLE):
@@ -103,25 +117,17 @@ async def on_message(msg):
 
 #If a user with the Max Host role adds a :pushpin: (📌) reaction to a message, the message will be pinned
 @client.event
-async def on_raw_reaction_add(payload):
-	guild = await client.fetch_guild(guild_id = payload.guild_id)
-	member = await guild.fetch_member(member_id = payload.user_id)
-	channel = client.get_channel(id = payload.channel_id)
-	message = await channel.fetch_message(id = payload.message_id)
-	if payload.emoji.name == "📌" and get(member.roles, name = "Max Host"):
-		await message.pin()
+async def on_reaction_add(reaction, user):
+    if get(user.roles, name = "Max Host") and reaction.emoji == '📌':
+        await reaction.message.pin()
 
 #If a user with the Max Host role removes a :pushpin: (📌) reaction from the message, the message will be unpinned
 @client.event
-async def on_raw_reaction_remove(payload):
-	guild = await client.fetch_guild(guild_id = payload.guild_id)
-	member = await guild.fetch_member(member_id = payload.user_id)
-	channel = client.get_channel(id = payload.channel_id)
-	message = await channel.fetch_message(id = payload.message_id)
-	if payload.emoji.name == "📌" and get(member.roles, name = "Max Host"):
-		await message.unpin()
+async def on_reaction_remove(reaction, user):
+    if  get(user.roles, name = "Max Host") and reaction.emoji == '📌':
+        await reaction.message.unpin()
 
-#When bot is ready, open the command channel
+#When bot is ready, open the commad channel
 @client.event
 async def on_ready():
     global commandChn, warninglist, composedwarning
@@ -133,3 +139,4 @@ async def on_ready():
 #runs the app
 if __name__ == '__main__':
     client.run(os.environ.get('TOKEN'))
+
