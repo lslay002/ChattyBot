@@ -124,7 +124,7 @@ async def on_raw_reaction_add(payload):
 	message = await channel.fetch_message(id = payload.message_id)
     if channel.name == 'trading':
         return
-	elif payload.emoji.name == "📌" and get(member.roles, name = "Max Host"):
+    elif payload.emoji.name == "📌" and get(member.roles, name = "Max Host"):
 		await message.pin()
 
 # If a user with the Max Host role removes a :pushpin: (📌) reaction from the message, the message will be unpinned
@@ -136,7 +136,7 @@ async def on_raw_reaction_remove(payload):
 	message = await channel.fetch_message(id = payload.message_id)
     if channel.name == 'trading':
         return
-	elif payload.emoji.name == "📌" and get(member.roles, name = "Max Host"):
+    elif payload.emoji.name == "📌" and get(member.roles, name = "Max Host"):
 		await message.unpin()
 
 # When bot is ready, open the command channel
