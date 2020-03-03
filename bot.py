@@ -135,7 +135,6 @@ async def on_message(msg):
                 warnmess.add_field(name = 'ID', value = msg.author.id)
                 warnmess.add_field(name = 'Channel', value = 'Trading', inline = False)
                 warnmess.add_field(name = 'Message', value = msg.content, inline = False)
-                await msg.channel.send("Hello, {}! ♪".format(msg.author.mention) + '\n We keep trading casual on this server, so trades for shinies, events, legendaries, and dittos are not allowed. Please see the channel topic for a more detailed explanation!')
                 await msg.delete()
                 await logChn.send(embed = warnmess)
                 return
