@@ -1,8 +1,8 @@
-#Chatty Bot
-#Created for the r/PokemonMaxRaids discord server
-#Authored by Ymir | Prince_of_Galar and Eldaste
+# C H A T T Y   B O T
+# Created for the r/PokemonMaxRaids discord server
+# Authored by Ymir | Prince_of_Galar and Eldaste
 
-#setup
+# Setup
 import discord
 import asyncio
 import os
@@ -31,17 +31,17 @@ db.run("CREATE TABLE IF NOT EXISTS forbidden (words text)")
 client = discord.Client()
 commandChn = None
 
-#Helper function to help create the warnings
+# Helper function to help create the warnings
 def composeWarning(values):
     temp = '|'.join(map(str, values))
     temp = '(' + temp + r')\Z'
     return re.compile(temp)
 
-#Composed awarning (a regex object)
+# Composed awarning (a regex object)
 composedwarning = composeWarning(warninglist)
 
-#Monitor all messages for danger words and report them to the mods
-#Also reply to messages with certian mentions in them
+# Monitor all messages for danger words and report them to the mods
+# Also reply to messages with certian mentions in them
 @client.event
 async def on_message(msg):
     # Handle commands
@@ -89,8 +89,8 @@ async def on_message(msg):
                 await commandChn.send('Word removed.')
             elif splitmes[0] == ';help':
                 await commandChn.send(';get - What words are being watched for.\n;set - Add a word.\n;rm - Remove a word.')
-            #else:
-            #    await commandChn.send('What do I do with this?')
+            else:
+                await commandChn.send('What do I do with this?')
         return
         
     # If from a bot or the mods, ignore
@@ -115,19 +115,31 @@ async def on_message(msg):
         if val in mention_dict:
             await msg.channel.send('\n'.join(map(str, mention_dict[val])))
 
-#If a user with the Max Host role adds a :pushpin: (📌) reaction to a message, the message will be pinned
+# If a user with the Max Host role adds a :pushpin: (📌) reaction to a message, the message will be pinned
 @client.event
-async def on_reaction_add(reaction, user):
-    if get(user.roles, name = "Max Host") and reaction.emoji == '📌':
-        await reaction.message.pin()
+async def on_raw_reaction_add(payload):
+	guild = await client.fetch_guild(guild_id = payload.guild_id)
+	member = await guild.fetch_member(member_id = payload.user_id)
+	channel = client.get_channel(id = payload.channel_id)
+	message = await channel.fetch_message(id = payload.message_id)
+    if channel.name == 'trading':
+        return
+	elif payload.emoji.name == "📌" and get(member.roles, name = "Max Host"):
+		await message.pin()
 
-#If a user with the Max Host role removes a :pushpin: (📌) reaction from the message, the message will be unpinned
+# If a user with the Max Host role removes a :pushpin: (📌) reaction from the message, the message will be unpinned
 @client.event
-async def on_reaction_remove(reaction, user):
-    if  get(user.roles, name = "Max Host") and reaction.emoji == '📌':
-        await reaction.message.unpin()
+async def on_raw_reaction_remove(payload):
+	guild = await client.fetch_guild(guild_id = payload.guild_id)
+	member = await guild.fetch_member(member_id = payload.user_id)
+	channel = client.get_channel(id = payload.channel_id)
+	message = await channel.fetch_message(id = payload.message_id)
+    if channel.name == 'trading':
+        return
+	elif payload.emoji.name == "📌" and get(member.roles, name = "Max Host"):
+		await message.unpin()
 
-#When bot is ready, open the commad channel
+# When bot is ready, open the command channel
 @client.event
 async def on_ready():
     global commandChn, warninglist, composedwarning
@@ -136,7 +148,7 @@ async def on_ready():
     composedwarning = composeWarning(warninglist)
     print('Logged in as ' + client.user.name)
 
-#runs the app
+# runs the app
 if __name__ == '__main__':
     client.run(os.environ.get('TOKEN'))
 
