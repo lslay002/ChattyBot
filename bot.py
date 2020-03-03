@@ -154,8 +154,8 @@ async def on_message(msg):
 async def on_raw_reaction_add(payload):
     guild = await client.fetch_guild(guild_id = payload.guild_id)
     member = await guild.fetch_member(member_id = payload.user_id)
+    channel = client.get_channel(id = payload.channel_id)
     if payload.emoji.name == "📌" and get(member.roles, name = "Max Host") and channel.name != 'trading':
-        channel = client.get_channel(id = payload.channel_id)
         message = await channel.fetch_message(id = payload.message_id)
         await message.pin()
 
@@ -164,15 +164,15 @@ async def on_raw_reaction_add(payload):
 async def on_raw_reaction_remove(payload):
     guild = await client.fetch_guild(guild_id = payload.guild_id)
     member = await guild.fetch_member(member_id = payload.user_id)
+    channel = client.get_channel(id = payload.channel_id)
     if payload.emoji.name == "📌" and get(member.roles, name = "Max Host") and channel.name != 'trading':
-        channel = client.get_channel(id = payload.channel_id)
         message = await channel.fetch_message(id = payload.message_id)
         await message.unpin()
 
 # When bot is ready, open the command channel
 @client.event
 async def on_ready():
-    global commandChn, warninglist, composedwarning
+    global commandChn, warninglist, composedwarning, reportChn
     commandChn = client.get_channel(COMMANDCHNNUM)
     reportChn = client.get_channel(REPORTCHNNUM)
     warninglist = db.all('SELECT words FROM forbidden')
