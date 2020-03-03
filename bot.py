@@ -102,7 +102,7 @@ async def on_message(msg):
                     await target.create_dm()
                     targetchn = target.dm_channel
                 await targetchn.send(' '.join(splitmes[2:]))
-                await commandChn.send('Message sent.')
+                await msg.channel.send('Message sent.')
             elif splitmes[0] == ';help':
                 await commandChn.send(';get - What words are being watched for.\n;set - Add a word.\n;rm - Remove a word.\n;send <UserID> <Message> - Send a message to a user with Chatty')
             #else:
