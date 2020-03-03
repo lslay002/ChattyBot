@@ -14,6 +14,7 @@ from discord.utils import get
 MODROLE = "Mods"
 COMMANDCHNNUM = int(os.environ.get('COMMANDCHN'))
 REPORTCHNNUM = int(os.environ.get('REPORTCHN'))
+LOGCHNNUM = int(os.environ.get('LOGCHN'))
 
 def loadMentions():
     tmpm = {}
@@ -40,6 +41,7 @@ db.run("CREATE TABLE IF NOT EXISTS forbidden (words text)")
 client = discord.Client()
 commandChn = None
 reportChn = None
+logChn = None
 
 # Helper function to help create the warnings
 def composeWarning(values):
@@ -127,8 +129,14 @@ async def on_message(msg):
     if msg.channel.name == 'trading':
         for keywords in keywordsFile:
             if keywords in msg.content.lower():
+                warnmess = discord.Embed()
+                warnmess.title = 'Removal Report'
+                warnmess.add_field(name = 'User', value = msg.author)
+                warnmess.add_field(name = 'Channel', value = 'trading', inline = False)
+                warnmess.add_field(name = 'Message', value = msg.content, inline = False)
                 await msg.channel.send("Hello, {}! ♪".format(msg.author.mention) + '\n We keep trading casual on this server, so trades for shinies, events, legendaries, and dittos are not allowed. Please see the channel topic for a more detailed explanation!')
                 await msg.delete()
+                await logChn.send(embed = warnmess)
                 return
 
     # Analyze the message for warning words, notify mods if any appear
@@ -172,9 +180,10 @@ async def on_raw_reaction_remove(payload):
 # When bot is ready, open the command channel
 @client.event
 async def on_ready():
-    global commandChn, warninglist, composedwarning, reportChn
+    global commandChn, warninglist, composedwarning, reportChn, logChn
     commandChn = client.get_channel(COMMANDCHNNUM)
     reportChn = client.get_channel(REPORTCHNNUM)
+    logChn = client.get_channel(LOGCHNNUM)
     warninglist = db.all('SELECT words FROM forbidden')
     composedwarning = composeWarning(warninglist)
     print('Logged in as ' + client.user.name)
