@@ -127,9 +127,9 @@ async def on_message(msg):
     if msg.channel.name == 'trading':
         for keywords in keywordsFile:
             if keywords in msg.content.lower():
-            await msg.channel.send("Hello, {}! ♪".format(msg.author.mention) + '\n We keep trading casual on this server, so trades for shinies, events, legendaries, and dittos are not allowed. Please see the channel topic for a more detailed explanation!')
-            await msg.delete()
-            return
+                await msg.channel.send("Hello, {}! ♪".format(msg.author.mention) + '\n We keep trading casual on this server, so trades for shinies, events, legendaries, and dittos are not allowed. Please see the channel topic for a more detailed explanation!')
+                await msg.delete()
+                return
 
     # Analyze the message for warning words, notify mods if any appear
     dangerwords = filter(composedwarning.match, msg.content.split())
