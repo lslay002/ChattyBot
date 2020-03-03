@@ -33,7 +33,7 @@ def loadKeywords():
 
 warninglist = []
 mention_dict = loadMentions()
-keywordsFile = loadkeywords()
+keywordsFile = loadKeywords()
 db = postgres.Postgres(url = os.environ.get('DATABASE_URL'))
 db.run("CREATE TABLE IF NOT EXISTS forbidden (words text)")
 
