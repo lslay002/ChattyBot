@@ -1,8 +1,8 @@
-#Chatty Bot
-#Created for the r/PokemonMaxRaids discord server
-#Authored by Ymir | Prince_of_Galar and Eldaste
+# ♪ C H A T T Y   B O T ♪
+# Created for the r/PokemonMaxRaids discord server
+# Authored by Ymir | Prince_of_Galar and Eldaste
 
-#setup
+# Setup
 import discord
 import asyncio
 import os
@@ -23,25 +23,33 @@ def loadMentions():
             tmpm[key] = rest
     return tmpm
 
+def loadKeywords():
+    tmpm = []
+    # Open the keywords text file
+    with open('./data/keywords.txt','r') as f:
+        tempm = f.read().split(' | ')
+    return tempm
+
 warninglist = []
 mention_dict = loadMentions()
+keywordsFile = loadkeywords()
 db = postgres.Postgres(url = os.environ.get('DATABASE_URL'))
 db.run("CREATE TABLE IF NOT EXISTS forbidden (words text)")
 
 client = discord.Client()
 commandChn = None
 
-#Helper function to help create the warnings
+# Helper function to help create the warnings
 def composeWarning(values):
     temp = '|'.join(map(str, values))
     temp = r'\W*(' + temp + r')\W*\Z'
     return re.compile(temp, re.I)
 
-#Composed awarning (a regex object)
+# Composed warning (a regex object)
 composedwarning = composeWarning(warninglist)
 
-#Monitor all messages for danger words and report them to the mods
-#Also reply to messages with certian mentions in them
+# Monitor all messages for danger words and report them to the mods
+# Also reply to messages with certian mentions in them
 @client.event
 async def on_message(msg):
     # Handle commands
@@ -113,6 +121,14 @@ async def on_message(msg):
     if msg.author.bot or get(msg.author.roles, name = MODROLE):
         return
 
+    # Check user messages for keywords in the trading channel
+    if msg.channel.name == 'trading':
+        for keywords in keywordsFile:
+            if keywords in msg.content.lower():
+            await msg.channel.send("Hello, {}! ♪".format(msg.author.mention) + '\n We keep trading casual on this server, so trades for shinies, events, legendaries, and dittos are not allowed. Please see the channel topic for a more detailed explanation!')
+            await msg.delete()
+            return
+
     # Analyze the message for warning words, notify mods if any appear
     dangerwords = filter(composedwarning.match, msg.content.split())
 
@@ -131,27 +147,27 @@ async def on_message(msg):
         if val in mention_dict:
             await msg.channel.send('\n'.join(map(str, mention_dict[val])))
 
-#If a user with the Max Host role adds a :pushpin: (📌) reaction to a message, the message will be pinned
+# If a user with the Max Host role adds a :pushpin: (📌) reaction to a message, the message will be pinned
 @client.event
 async def on_raw_reaction_add(payload):
     guild = await client.fetch_guild(guild_id = payload.guild_id)
     member = await guild.fetch_member(member_id = payload.user_id)
-    if payload.emoji.name == "📌" and get(member.roles, name = "Max Host"):
+    if payload.emoji.name == "📌" and get(member.roles, name = "Max Host") and channel.name != 'trading':
         channel = client.get_channel(id = payload.channel_id)
         message = await channel.fetch_message(id = payload.message_id)
         await message.pin()
 
-#If a user with the Max Host role removes a :pushpin: (📌) reaction from the message, the message will be unpinned
+# If a user with the Max Host role removes a :pushpin: (📌) reaction from the message, the message will be unpinned
 @client.event
 async def on_raw_reaction_remove(payload):
     guild = await client.fetch_guild(guild_id = payload.guild_id)
     member = await guild.fetch_member(member_id = payload.user_id)
-    if payload.emoji.name == "📌" and get(member.roles, name = "Max Host"):
+    if payload.emoji.name == "📌" and get(member.roles, name = "Max Host") and channel.name != 'trading':
         channel = client.get_channel(id = payload.channel_id)
         message = await channel.fetch_message(id = payload.message_id)
         await message.unpin()
 
-#When bot is ready, open the command channel
+# When bot is ready, open the command channel
 @client.event
 async def on_ready():
     global commandChn, warninglist, composedwarning
@@ -160,6 +176,7 @@ async def on_ready():
     composedwarning = composeWarning(warninglist)
     print('Logged in as ' + client.user.name)
 
-#runs the app
+# runs the app
 if __name__ == '__main__':
     client.run(os.environ.get('TOKEN'))
+
