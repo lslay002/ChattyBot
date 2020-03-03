@@ -1,4 +1,4 @@
-# C H A T T Y   B O T
+# ♪ C H A T T Y   B O T ♪
 # Created for the r/PokemonMaxRaids discord server
 # Authored by Ymir | Prince_of_Galar and Eldaste
 
@@ -59,7 +59,7 @@ async def on_message(msg):
             user = msg.author
             channel = client.get_channel(654809293543047199)       
             await msg.delete()
-            await channel.send("{}".format(user.mention) + ' Trades for shinies, legendaries, and dittos are not allowed here. Please read the pinned messages.')
+            await channel.send("Hello, {}! ♪".format(user.mention) + '\n We keep trading casual on this server, so trades for shinies, events, legendaries, and dittos are not allowed. Please see the channel topic for a more detailed explanation!')
                 
     if not msg.author.bot and msg.channel.id == COMMANDCHNNUM:
         if get(msg.author.roles, name = MODROLE):
@@ -124,7 +124,7 @@ async def on_raw_reaction_add(payload):
 	message = await channel.fetch_message(id = payload.message_id)
     if channel.name == 'trading':
         return
-    elif payload.emoji.name == "📌" and get(member.roles, name = "Max Host"):
+	elif payload.emoji.name == "📌" and get(member.roles, name = "Max Host"):
 		await message.pin()
 
 # If a user with the Max Host role removes a :pushpin: (📌) reaction from the message, the message will be unpinned
