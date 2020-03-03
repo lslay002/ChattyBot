@@ -13,6 +13,7 @@ from discord.utils import get
 # Establish settings and IO helpers
 MODROLE = "Mods"
 COMMANDCHNNUM = int(os.environ.get('COMMANDCHN'))
+REPORTCHNNUM = int(os.environ.get('REPORTCHN'))
 
 def loadMentions():
     tmpm = {}
@@ -38,6 +39,7 @@ db.run("CREATE TABLE IF NOT EXISTS forbidden (words text)")
 
 client = discord.Client()
 commandChn = None
+reportChn = None
 
 # Helper function to help create the warnings
 def composeWarning(values):
@@ -62,10 +64,10 @@ async def on_message(msg):
         warnmess.add_field(name = 'ID', value = msg.author.id)
         warnmess.add_field(name = 'Report Contents', value = msg.content, inline = False)
         warnmess.set_footer(text = 'To reply to a user with a message from Chatty, use ;send <UserID> <Message>')
-        await commandChn.send(embed = warnmess)
+        await reportChn.send(embed = warnmess)
         return
                 
-    if not msg.author.bot and msg.channel.id == COMMANDCHNNUM:
+    if not msg.author.bot and (msg.channel.id == COMMANDCHNNUM or (msg.channel.id == REPORTCHNNUM and msg.content.startswith(';send'))):
         if get(msg.author.roles, name = MODROLE):
             #print('Command Recieved')
             splitmes = msg.content.split()
@@ -93,17 +95,17 @@ async def on_message(msg):
                 await commandChn.send('Word removed.')
             elif splitmes[0] == ';send':
                 if len(splitmes) == 1:
-                    await commandChn.send('Who would you like to send a message to?')
+                    await msg.channel.send('Who would you like to send a message to?')
                     return
                 if len(splitmes) == 2:
-                    await commandChn.send('What message would you like to send?')
+                    await msg.channel.send('What message would you like to send?')
                     return
                 if not str(splitmes[1]).isdigit():
-                    await commandChn.send('Please use a UserID as a target of who to send to.')
+                    await msg.channel.send('Please use a UserID as a target of who to send to.')
                     return
                 target = client.get_user(int(splitmes[1]))
                 if target == None:
-                    await commandChn.send('User not found.')
+                    await msg.channel.send('User not found.')
                     return
                 targetchn = target.dm_channel
                 if targetchn == None:
@@ -172,6 +174,7 @@ async def on_raw_reaction_remove(payload):
 async def on_ready():
     global commandChn, warninglist, composedwarning
     commandChn = client.get_channel(COMMANDCHNNUM)
+    reportChn = client.get_channel(REPORTCHNNUM)
     warninglist = db.all('SELECT words FROM forbidden')
     composedwarning = composeWarning(warninglist)
     print('Logged in as ' + client.user.name)
