@@ -215,6 +215,7 @@ async def on_message(msg):
                         warnmess.add_field(name = 'Channel', value = msg.channel.name, inline = False)
                         warnmess.add_field(name = 'Message', value = msg.content, inline = False)
                         await logChn.send(embed = warnmess)
+                        dele = True
                 if dele:
                     await msg.delete()
                     return
