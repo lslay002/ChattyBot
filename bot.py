@@ -196,10 +196,8 @@ async def on_message(msg):
                         warnmess = discord.Embed()
                         warnmess.title = 'Channel Specific Warning Report'
                         warnmess.add_field(name = 'User', value = msg.author)
-                        warnmess.add_field(name = 'Words Used', value = cdw)
+                        warnmess.add_field(name = 'Words Used', value = chkwords)
                         warnmess.add_field(name = 'Message Link', value = msg.jump_url, inline = False)
-
-                        print('msg assembled')
 
                         if flag == 'l':
                             await logChn.send(embed = warnmess)
