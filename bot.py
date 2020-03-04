@@ -194,10 +194,12 @@ async def on_message(msg):
                 for flag in command[0]:
                     if flag in 'lct':
                         warnmess = discord.Embed()
-                        warnmess.title = 'Warning Report'
+                        warnmess.title = 'Channel Specific Warning Report'
                         warnmess.add_field(name = 'User', value = msg.author)
                         warnmess.add_field(name = 'Words Used', value = cdw)
                         warnmess.add_field(name = 'Message Link', value = msg.jump_url, inline = False)
+
+                        print('msg assembled')
 
                         if flag == 'l':
                             await logChn.send(embed = warnmess)
@@ -212,7 +214,7 @@ async def on_message(msg):
                         warnmess.title = 'Removal Report'
                         warnmess.add_field(name = 'User', value = msg.author)
                         warnmess.add_field(name = 'ID', value = msg.author.id)
-                        warnmess.add_field(name = 'Channel', value = 'Trading', inline = False)
+                        warnmess.add_field(name = 'Channel', value = msg.channel.name, inline = False)
                         warnmess.add_field(name = 'Message', value = msg.content, inline = False)
                         await logChn.send(embed = warnmess)
                 if dele:
