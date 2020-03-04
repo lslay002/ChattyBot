@@ -44,13 +44,38 @@ reportChn = None
 logChn = None
 
 # Helper function to help create the warnings
-def composeWarning(values):
+def composeWarning(values, singleword = True):
     temp = '|'.join(map(str, values))
-    temp = r'\W*(' + temp + r')\W*\Z'
+    temp = r'\W*(' + temp + r')\W*'
+    if singleword:
+        temp = temp + r'\Z'
     return re.compile(temp, re.I)
+
+# Load ChannelSpecific Warning File
+def loadSpecificChn():
+    csw = {}
+    with open('./data/csw.txt') as f:
+        for line in f:
+            ll = line.split(r'=|=')
+            if len(ll) < 3:
+                continue
+            tempholder = [ll[1], composeWarning(ll[2].split(r'||'))]
+            if len(ll) > 3:
+                tempholder.append(ll[3])
+            else:
+                tempholder.append('No message set.')
+            for x in ll[0].split(r'||'):
+                if x not in csw:
+                    csw[x] = []
+                csw[x].append(tempholder)
+    return csw
 
 # Composed warning (a regex object)
 composedwarning = composeWarning(warninglist)
+
+# Chennel spcific Commands, of the form of a dictonary with the IDs as keys, and the contents a list of lists,
+# with the internal lists of the form [flags, RegEx, Message]
+csCommands = loadSpecificChn()
 
 # Monitor all messages for danger words and report them to the mods
 # Also reply to messages with certian mentions in them
@@ -135,7 +160,7 @@ async def on_message(msg):
                 warnmess.add_field(name = 'ID', value = msg.author.id)
                 warnmess.add_field(name = 'Channel', value = 'Trading', inline = False)
                 warnmess.add_field(name = 'Message', value = msg.content, inline = False)
-                await msg.channel.send("Hello, {}! ♪".format(msg.author.mention) + '\n We keep trading casual on this server, so trades for shinies, events, legendaries, and dittos are not allowed. Please see the channel topic for a more detailed explanation!')
+                await msg.channel.send("Hello, {}! ♪".format(msg.author.mention) + '\nWe keep trading casual on this server, so trades for shinies, events, legendaries, and Dittos are not allowed. Please see the channel topic for a more detailed explanation!')
                 await msg.delete()
                 await logChn.send(embed = warnmess)
                 return
@@ -157,6 +182,42 @@ async def on_message(msg):
         val = str(mention.id)
         if val in mention_dict:
             await msg.channel.send('\n'.join(map(str, mention_dict[val])))
+
+    # Handle Channel Specific catchlists
+    if str(msg.channel.id) in csCommands:
+        for command in csCommands[str(msg.channel.id)]:
+            chkwords = ', '.join(filter(command[1].match, msg.content.split()))
+                        
+            if chkwords != '':
+                dele = False
+
+                for flag in command[0]:
+                    if flag in 'lct':
+                        warnmess = discord.Embed()
+                        warnmess.title = 'Warning Report'
+                        warnmess.add_field(name = 'User', value = msg.author)
+                        warnmess.add_field(name = 'Words Used', value = cdw)
+                        warnmess.add_field(name = 'Message Link', value = msg.jump_url, inline = False)
+
+                        if flag == 'l':
+                            await logChn.send(embed = warnmess)
+                        elif flag == 'c':
+                            await commandChn.send(embed = warnmess)
+                        else:
+                            await reportChn.send(embed = warnmess)
+                    elif flag == 'r':
+                        await msg.channel.send(command[2])
+                    elif flag == 'd':
+                        warnmess = discord.Embed()
+                        warnmess.title = 'Removal Report'
+                        warnmess.add_field(name = 'User', value = msg.author)
+                        warnmess.add_field(name = 'ID', value = msg.author.id)
+                        warnmess.add_field(name = 'Channel', value = 'Trading', inline = False)
+                        warnmess.add_field(name = 'Message', value = msg.content, inline = False)
+                        await logChn.send(embed = warnmess)
+                if dele:
+                    await msg.delete()
+                    return
 
 # If a user with the Max Host role adds a :pushpin: (📌) reaction to a message, the message will be pinned
 @client.event

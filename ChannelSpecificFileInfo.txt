@@ -1,0 +1,16 @@
+This is how to format data in the csw.txt file to create channel specific watchword sets and perform actions on the messages that contain those messages.
+Watchword list supports RegEx
+
+The Higher in the file, the greater priority the match. If a message is deleted, all other commands in lower priority will not be executed.
+
+Channel Specific data should be of the following format:
+Channel ID (if multiple, seperate with ||) =|= flags =|= Watchword list (seperated by ||) =|= Message (Optional)
+Example:
+646049007998730290=|=dr=|=test||bauble=|=This is a test!
+
+Flags:
+d - Delete the message. This will automatically create a Removal Report in the log channel
+r - Reply to the message with the optional message
+l - Log the message in the log channel
+c - Log the message in the Command Channel
+t - Log the message in the channel DM reports are sent to
