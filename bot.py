@@ -94,7 +94,7 @@ async def banUser(user, guild, time = -1, reason = None, message =  None):
     warnmess = discord.Embed()
     warnmess.title = 'User Banned'
     warnmess.add_field(name = 'User', value = user)
-    warnmess.add_field(name = 'ID', value = unbanid)
+    warnmess.add_field(name = 'ID', value = user.id)
     if reason != None:
         warnmess.add_field(name = 'Reason', value = reason, inline = False)
     await logChn.send(embed = warnmess)
@@ -121,16 +121,16 @@ async def unbanLoop():
         db.run("UPDATE tempbans SET time = time - 1")
         unbanlist = db.all('SELECT id FROM tempbans WHERE time <= 0')
         for unbanid in unbanlist:
-            try:
-                hold = await client.get_user_info(unbanid)
-                await mainServer.unban(hold)
-                warnmess = discord.Embed()
-                warnmess.title = 'User Unbanned'
-                warnmess.add_field(name = 'User', value = hold)
-                warnmess.add_field(name = 'ID', value = unbanid)
-                await logChn.send(embed = warnmess)
-            except:
-                await logChn.send('Something went wrong unbanning User ID: ' + str(unbanid))
+           # try:
+            hold = await client.get_user_info(unbanid)
+            await mainServer.unban(hold)
+            warnmess = discord.Embed()
+            warnmess.title = 'User Unbanned'
+            warnmess.add_field(name = 'User', value = hold)
+            warnmess.add_field(name = 'ID', value = unbanid)
+            await logChn.send(embed = warnmess)
+           # except:
+           #     await logChn.send('Something went wrong unbanning User ID: ' + str(unbanid))
             db.run("DELETE FROM tempbans WHERE id = %(uid)s", uid = unbanid)
             
     print('unbanloop ended')
