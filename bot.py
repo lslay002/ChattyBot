@@ -38,6 +38,7 @@ mention_dict = loadMentions()
 keywordsFile = loadKeywords()
 db = postgres.Postgres(url = os.environ.get('DATABASE_URL'))
 db.run("CREATE TABLE IF NOT EXISTS forbidden (words text)")
+#db.run("DROP TABLE IF EXISTS tempbans")
 db.run("CREATE TABLE IF NOT EXISTS tempbans (id bigint PRIMARY KEY, time int)")
 
 client = discord.Client()
@@ -111,7 +112,7 @@ async def unbanLoop():
     print('unbanloop init')
     await client.wait_until_ready()
     print('unbanloop started')
-    while not client.is_closed:
+    while not client.is_closed():
         await asyncio.sleep(10) # timers mesured in hours to go
         watchlist = {}
         print('unbanloop execute')
