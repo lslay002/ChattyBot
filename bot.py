@@ -33,12 +33,15 @@ def loadKeywords():
     return tempm
 
 warninglist = []
+watchlist = {}
 mention_dict = loadMentions()
 keywordsFile = loadKeywords()
 db = postgres.Postgres(url = os.environ.get('DATABASE_URL'))
 db.run("CREATE TABLE IF NOT EXISTS forbidden (words text)")
+db.run("CREATE TABLE IF NOT EXISTS tempbans (id bigint PRIMARY KEY, time int)")
 
 client = discord.Client()
+mainServer = None
 commandChn = None
 reportChn = None
 logChn = None
@@ -77,12 +80,59 @@ composedwarning = composeWarning(warninglist)
 # with the internal lists of the form [flags, RegEx, Message]
 csCommands = loadSpecificChn()
 
+# Helper method to ban users and send messages.
+async def banUser(user, guild, time = -1, reason = None, message =  None):
+    if reason != None:
+        await guild.ban(user, reason = reason, delete_message_days = 0)
+    else:
+        await guild.ban(user, delete_message_days = 0)
+
+    if time != -1:
+        db.run("INSERT INTO tempbans VALUES (%(newid)s, %(duration)s)", newid = user.id, duration = time)
+    
+    warnmess = discord.Embed()
+    warnmess.title = 'User Banned'
+    warnmess.add_field(name = 'User', value = hold)
+    warnmess.add_field(name = 'ID', value = unbanid)
+    if reason != None:
+        warnmess.add_field(name = 'Reason', value = reason, inline = False)
+    await logChn.send(embed = warnmess)
+
+    if message != None:
+        targetchn = user.dm_channel
+        if targetchn == None:
+            await user.create_dm()
+            targetchn = user.dm_channel
+        await targetchn.send(message)
+
+# Event loop to handle unbanning users that have been tempbanned, also clears the watchlist
+async def unbanLoop():
+    global watchlist
+    await client.wait_until_ready()
+    while not client.is_closed:
+        await asyncio.sleep(10) # timers mesured in hours to go
+        watchlist = {}
+        db.run("UPDATE tempbans SET time = time - 1")
+        unbanlist = db.all('SELECT id FROM tempbans WHERE time <= 0')
+        for unbanid in unbanlist:
+            try:
+                hold = await client.get_user_info(unbanid)
+                await mainServer.unban(hold)
+                warnmess = discord.Embed()
+                warnmess.title = 'User Unbanned'
+                warnmess.add_field(name = 'User', value = hold)
+                warnmess.add_field(name = 'ID', value = unbanid)
+                await logChn.send(embed = warnmess)
+            except:
+                await logChn.send('Something went wrong unbanning User ID: ' + str(unbanid))
+            db.run("DELETE FROM tempbans WHERE id = %(uid)s", uid = unbanid)
+
 # Monitor all messages for danger words and report them to the mods
 # Also reply to messages with certian mentions in them
 @client.event
 async def on_message(msg):
     # Handle commands
-    global warninglist, composedwarning
+    global warninglist, composedwarning, watchlist
 
     if not msg.author.bot and msg.channel.type == discord.ChannelType.private:
         warnmess = discord.Embed()
@@ -160,7 +210,11 @@ async def on_message(msg):
                 warnmess.add_field(name = 'ID', value = msg.author.id)
                 warnmess.add_field(name = 'Channel', value = 'Trading', inline = False)
                 warnmess.add_field(name = 'Message', value = msg.content, inline = False)
-                await msg.channel.send("Hello, {}! ♪".format(msg.author.mention) + '\nWe keep trading casual on this server, so trades for shinies, events, legendaries, and Dittos are not allowed. Please see the channel topic for a more detailed explanation!')
+                if msg.author.id in watchlist:
+                    banUser(msg.author, msg.guild, 24, 'Multiple trade violations', "You've been banned for one day due to repeatedly trying to trade prohibited Pokemon. If you believe this was a mistake, you can appeal your ban here: https://www.reddit.com/message/compose?to=%2Fr%2Fpokemonmaxraids")
+                else:
+                    watchlist[msg.author.id] = True
+                    await msg.channel.send("Hello, {}! ♪".format(msg.author.mention) + '\nWe keep trading casual on this server, so trades for shinies, events, legendaries, and Dittos are not allowed. Please see the channel topic for a more detailed explanation!')
                 await msg.delete()
                 await logChn.send(embed = warnmess)
                 return
@@ -243,15 +297,17 @@ async def on_raw_reaction_remove(payload):
 # When bot is ready, open the command channel
 @client.event
 async def on_ready():
-    global commandChn, warninglist, composedwarning, reportChn, logChn
+    global commandChn, warninglist, composedwarning, reportChn, logChn, mainServer
     commandChn = client.get_channel(COMMANDCHNNUM)
     reportChn = client.get_channel(REPORTCHNNUM)
     logChn = client.get_channel(LOGCHNNUM)
+    mainServer = commandChn.guild
     warninglist = db.all('SELECT words FROM forbidden')
     composedwarning = composeWarning(warninglist)
     print('Logged in as ' + client.user.name)
 
 # runs the app
 if __name__ == '__main__':
+    lient.loop.create_task(unbanLoop())
     client.run(os.environ.get('TOKEN'))
 
