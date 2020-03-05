@@ -211,7 +211,7 @@ async def on_message(msg):
                 warnmess.add_field(name = 'Channel', value = 'Trading', inline = False)
                 warnmess.add_field(name = 'Message', value = msg.content, inline = False)
                 if msg.author.id in watchlist:
-                    banUser(msg.author, msg.guild, 24, 'Multiple trade violations', "You've been banned for one day due to repeatedly trying to trade prohibited Pokemon. If you believe this was a mistake, you can appeal your ban here: https://www.reddit.com/message/compose?to=%2Fr%2Fpokemonmaxraids")
+                    await banUser(msg.author, msg.guild, 24, 'Multiple trade violations', "You've been banned for one day due to repeatedly trying to trade prohibited Pokemon. If you believe this was a mistake, you can appeal your ban here: https://www.reddit.com/message/compose?to=%2Fr%2Fpokemonmaxraids")
                 else:
                     watchlist[msg.author.id] = True
                     await msg.channel.send("Hello, {}! ♪".format(msg.author.mention) + '\nWe keep trading casual on this server, so trades for shinies, events, legendaries, and Dittos are not allowed. Please see the channel topic for a more detailed explanation!')
