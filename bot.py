@@ -122,7 +122,7 @@ async def unbanLoop():
         unbanlist = db.all('SELECT id FROM tempbans WHERE time <= 0')
         for unbanid in unbanlist:
            # try:
-            hold = await client.get_user(unbanid)
+            hold = client.get_user(unbanid)
             await mainServer.unban(hold)
             warnmess = discord.Embed()
             warnmess.title = 'User Unbanned'
