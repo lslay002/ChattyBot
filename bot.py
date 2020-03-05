@@ -83,6 +83,13 @@ csCommands = loadSpecificChn()
 
 # Helper method to ban users and send messages.
 async def banUser(user, guild, time = -1, reason = None, message =  None):
+    if message != None:
+        targetchn = user.dm_channel
+        if targetchn == None:
+            await user.create_dm()
+            targetchn = user.dm_channel
+        await targetchn.send(message)
+        
     if reason != None:
         await guild.ban(user, reason = reason, delete_message_days = 0)
     else:
@@ -98,13 +105,6 @@ async def banUser(user, guild, time = -1, reason = None, message =  None):
     if reason != None:
         warnmess.add_field(name = 'Reason', value = reason, inline = False)
     await logChn.send(embed = warnmess)
-
-    if message != None:
-        targetchn = user.dm_channel
-        if targetchn == None:
-            await user.create_dm()
-            targetchn = user.dm_channel
-        await targetchn.send(message)
 
 # Event loop to handle unbanning users that have been tempbanned, also clears the watchlist
 async def unbanLoop():
@@ -122,7 +122,7 @@ async def unbanLoop():
         unbanlist = db.all('SELECT id FROM tempbans WHERE time <= 0')
         for unbanid in unbanlist:
            # try:
-            hold = await client.get_user_info(unbanid)
+            hold = await client.get_user(unbanid)
             await mainServer.unban(hold)
             warnmess = discord.Embed()
             warnmess.title = 'User Unbanned'
