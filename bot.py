@@ -38,7 +38,6 @@ mention_dict = loadMentions()
 keywordsFile = loadKeywords()
 db = postgres.Postgres(url = os.environ.get('DATABASE_URL'))
 db.run("CREATE TABLE IF NOT EXISTS forbidden (words text)")
-db.run("DROP TABLE IF EXISTS tempbans")
 db.run("CREATE TABLE IF NOT EXISTS tempbans (id bigint PRIMARY KEY, time int)")
 
 client = discord.Client()
@@ -109,31 +108,24 @@ async def banUser(user, guild, time = -1, reason = None, message =  None):
 # Event loop to handle unbanning users that have been tempbanned, also clears the watchlist
 async def unbanLoop():
     global watchlist
-    print('unbanloop init')
     await client.wait_until_ready()
-    print('unbanloop started')
-    s  = 0
     while not client.is_closed():
-        await asyncio.sleep(5) # timers mesured in hours to go
+        await asyncio.sleep(30) # timers mesured in hours to go
         watchlist = {}
-        s=s+1
-        print('unbanloop execute ' + str(s))
         db.run("UPDATE tempbans SET time = time - 1")
         unbanlist = db.all('SELECT id FROM tempbans WHERE time <= 0')
         for unbanid in unbanlist:
-           # try:
-            hold = client.get_user(unbanid)
-            await mainServer.unban(hold)
-            warnmess = discord.Embed()
-            warnmess.title = 'User Unbanned'
-            warnmess.add_field(name = 'User', value = hold)
-            warnmess.add_field(name = 'ID', value = unbanid)
-            await logChn.send(embed = warnmess)
-           # except:
-           #     await logChn.send('Something went wrong unbanning User ID: ' + str(unbanid))
+            try:
+                hold = client.get_user(unbanid)
+                await mainServer.unban(hold)
+                warnmess = discord.Embed()
+                warnmess.title = 'User Unbanned'
+                warnmess.add_field(name = 'User', value = hold)
+                warnmess.add_field(name = 'ID', value = unbanid)
+                await logChn.send(embed = warnmess)
+            except:
+                await logChn.send('Something went wrong unbanning User ID: ' + str(unbanid))
             db.run("DELETE FROM tempbans WHERE id = %(uid)s", uid = unbanid)
-            
-    print('unbanloop ended')
 
 # Monitor all messages for danger words and report them to the mods
 # Also reply to messages with certian mentions in them
@@ -218,13 +210,13 @@ async def on_message(msg):
                 warnmess.add_field(name = 'ID', value = msg.author.id)
                 warnmess.add_field(name = 'Channel', value = 'Trading', inline = False)
                 warnmess.add_field(name = 'Message', value = msg.content, inline = False)
+                await logChn.send(embed = warnmess)
                 if msg.author.id in watchlist:
                     await banUser(msg.author, msg.guild, 2, 'Multiple trade violations', "You've been banned for one day due to repeatedly trying to trade prohibited Pokemon. If you believe this was a mistake, you can appeal your ban here: https://www.reddit.com/message/compose?to=%2Fr%2Fpokemonmaxraids")
                 else:
                     watchlist[msg.author.id] = True
                     await msg.channel.send("Hello, {}! ♪".format(msg.author.mention) + '\nWe keep trading casual on this server, so trades for shinies, events, legendaries, and Dittos are not allowed. Please see the channel topic for a more detailed explanation!')
                 await msg.delete()
-                await logChn.send(embed = warnmess)
                 return
 
     # Analyze the message for warning words, notify mods if any appear
