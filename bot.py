@@ -92,7 +92,7 @@ async def banUser(user, guild, time = -1, reason = None, message =  None):
     
     warnmess = discord.Embed()
     warnmess.title = 'User Banned'
-    warnmess.add_field(name = 'User', value = hold)
+    warnmess.add_field(name = 'User', value = user)
     warnmess.add_field(name = 'ID', value = unbanid)
     if reason != None:
         warnmess.add_field(name = 'Reason', value = reason, inline = False)
@@ -108,10 +108,13 @@ async def banUser(user, guild, time = -1, reason = None, message =  None):
 # Event loop to handle unbanning users that have been tempbanned, also clears the watchlist
 async def unbanLoop():
     global watchlist
+    print('unbanloop init')
     await client.wait_until_ready()
+    print('unbanloop started')
     while not client.is_closed:
         await asyncio.sleep(10) # timers mesured in hours to go
         watchlist = {}
+        print('unbanloop execute')
         db.run("UPDATE tempbans SET time = time - 1")
         unbanlist = db.all('SELECT id FROM tempbans WHERE time <= 0')
         for unbanid in unbanlist:
