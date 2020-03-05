@@ -308,6 +308,6 @@ async def on_ready():
 
 # runs the app
 if __name__ == '__main__':
-    lient.loop.create_task(unbanLoop())
+    client.loop.create_task(unbanLoop())
     client.run(os.environ.get('TOKEN'))
 
