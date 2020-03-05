@@ -115,16 +115,23 @@ async def unbanLoop():
         db.run("UPDATE tempbans SET time = time - 1")
         unbanlist = db.all('SELECT id FROM tempbans WHERE time <= 0')
         for unbanid in unbanlist:
-            try:
-                hold = client.get_user(unbanid)
-                await mainServer.unban(hold)
-                warnmess = discord.Embed()
-                warnmess.title = 'User Unbanned'
-                warnmess.add_field(name = 'User', value = hold)
-                warnmess.add_field(name = 'ID', value = unbanid)
-                await logChn.send(embed = warnmess)
-            except:
-                await logChn.send('Something went wrong unbanning User ID: ' + str(unbanid))
+           # try:
+            #    hold = client.get_user(unbanid)
+             #   await mainServer.unban(hold)
+              #  warnmess = discord.Embed()
+               # warnmess.title = 'User Unbanned'
+        #        warnmess.add_field(name = 'User', value = hold)
+         #       warnmess.add_field(name = 'ID', value = unbanid)
+          #      await logChn.send(embed = warnmess)
+           # except:
+            #    await logChn.send('Something went wrong unbanning User ID: ' + str(unbanid))
+            hold = client.get_user(unbanid)
+            await mainServer.unban(hold)
+            warnmess = discord.Embed()
+            warnmess.title = 'User Unbanned'
+            warnmess.add_field(name = 'User', value = hold
+            warnmess.add_field(name = 'ID', value = unbanid)
+            await logChn.send(embed = warnmess)
             db.run("DELETE FROM tempbans WHERE id = %(uid)s", uid = unbanid)
 
 # Monitor all messages for danger words and report them to the mods
@@ -212,7 +219,7 @@ async def on_message(msg):
                 warnmess.add_field(name = 'Message', value = msg.content, inline = False)
                 await logChn.send(embed = warnmess)
                 if msg.author.id in watchlist:
-                    await banUser(msg.author, msg.guild, 2, 'Multiple trade violations', "You've been banned for one day due to repeatedly trying to trade prohibited Pokemon. If you believe this was a mistake, you can appeal your ban here: https://www.reddit.com/message/compose?to=%2Fr%2Fpokemonmaxraids")
+                    await banUser(msg.author, msg.guild, 3, 'Multiple trade violations', "You've been banned for one day due to repeatedly trying to trade prohibited Pokemon. If you believe this was a mistake, you can appeal your ban here: https://www.reddit.com/message/compose?to=%2Fr%2Fpokemonmaxraids")
                 else:
                     watchlist[msg.author.id] = True
                     await msg.channel.send("Hello, {}! ♪".format(msg.author.mention) + '\nWe keep trading casual on this server, so trades for shinies, events, legendaries, and Dittos are not allowed. Please see the channel topic for a more detailed explanation!')
