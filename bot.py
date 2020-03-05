@@ -129,7 +129,7 @@ async def unbanLoop():
             await mainServer.unban(hold)
             warnmess = discord.Embed()
             warnmess.title = 'User Unbanned'
-            warnmess.add_field(name = 'User', value = hold
+            warnmess.add_field(name = 'User', value = hold)
             warnmess.add_field(name = 'ID', value = unbanid)
             await logChn.send(embed = warnmess)
             db.run("DELETE FROM tempbans WHERE id = %(uid)s", uid = unbanid)
