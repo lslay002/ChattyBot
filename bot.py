@@ -125,7 +125,7 @@ async def unbanLoop():
           #      await logChn.send(embed = warnmess)
            # except:
             #    await logChn.send('Something went wrong unbanning User ID: ' + str(unbanid))
-            hold = client.get_user(unbanid)
+            hold = await client.fetch_user(unbanid)
             await mainServer.unban(hold)
             warnmess = discord.Embed()
             warnmess.title = 'User Unbanned'
