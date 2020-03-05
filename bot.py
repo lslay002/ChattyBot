@@ -115,23 +115,16 @@ async def unbanLoop():
         db.run("UPDATE tempbans SET time = time - 1")
         unbanlist = db.all('SELECT id FROM tempbans WHERE time <= 0')
         for unbanid in unbanlist:
-           # try:
-            #    hold = client.get_user(unbanid)
-             #   await mainServer.unban(hold)
-              #  warnmess = discord.Embed()
-               # warnmess.title = 'User Unbanned'
-        #        warnmess.add_field(name = 'User', value = hold)
-         #       warnmess.add_field(name = 'ID', value = unbanid)
-          #      await logChn.send(embed = warnmess)
-           # except:
-            #    await logChn.send('Something went wrong unbanning User ID: ' + str(unbanid))
-            hold = await client.fetch_user(unbanid)
-            await mainServer.unban(hold)
-            warnmess = discord.Embed()
-            warnmess.title = 'User Unbanned'
-            warnmess.add_field(name = 'User', value = hold)
-            warnmess.add_field(name = 'ID', value = unbanid)
-            await logChn.send(embed = warnmess)
+            try:
+                hold = await client.fetch_user(unbanid)
+                await mainServer.unban(hold)
+                warnmess = discord.Embed()
+                warnmess.title = 'User Unbanned'
+                warnmess.add_field(name = 'User', value = hold)
+                warnmess.add_field(name = 'ID', value = unbanid)
+                await logChn.send(embed = warnmess)
+            except:
+                await logChn.send('Something went wrong unbanning User ID: ' + str(unbanid))
             db.run("DELETE FROM tempbans WHERE id = %(uid)s", uid = unbanid)
 
 # Monitor all messages for danger words and report them to the mods
@@ -177,6 +170,12 @@ async def on_message(msg):
                 db.run("DELETE FROM forbidden WHERE words=(%(old)s)", old = splitmes[1])
                 composedwarning = composeWarning(warninglist)
                 await commandChn.send('Word removed.')
+            elif splitmes[0] == ';perma':
+                if len(splitmes) == 1:
+                    await commandChn.send('What user would you no longer like to come back?')
+                    return
+                db.run("DELETE FROM tempbans WHERE id=(%(old)s)", old = splitmes[1])
+                await commandChn.send('User removed.')
             elif splitmes[0] == ';send':
                 if len(splitmes) == 1:
                     await msg.channel.send('Who would you like to send a message to?')
@@ -198,7 +197,7 @@ async def on_message(msg):
                 await targetchn.send(' '.join(splitmes[2:]))
                 await msg.channel.send('Message sent.')
             elif splitmes[0] == ';help':
-                await commandChn.send(';get - What words are being watched for.\n;set - Add a word.\n;rm - Remove a word.\n;send <UserID> <Message> - Send a message to a user with Chatty')
+                await commandChn.send(';get - What words are being watched for.\n;set - Add a word.\n;rm - Remove a word.\n;send <UserID> <Message> - Send a message to a user with Chatty\n;perma - Take a user off Chatty\'s auto-unban.')
             #else:
             #    await commandChn.send('What do I do with this?')
         return
@@ -219,7 +218,7 @@ async def on_message(msg):
                 warnmess.add_field(name = 'Message', value = msg.content, inline = False)
                 await logChn.send(embed = warnmess)
                 if msg.author.id in watchlist:
-                    await banUser(msg.author, msg.guild, 3, 'Multiple trade violations', "You've been banned for one day due to repeatedly trying to trade prohibited Pokemon. If you believe this was a mistake, you can appeal your ban here: https://www.reddit.com/message/compose?to=%2Fr%2Fpokemonmaxraids")
+                    await banUser(msg.author, msg.guild, 2, 'Multiple trade violations', "You've been banned for one day due to repeatedly trying to trade prohibited Pokemon. If you believe this was a mistake, you can appeal your ban here: https://www.reddit.com/message/compose?to=%2Fr%2Fpokemonmaxraids")
                 else:
                     watchlist[msg.author.id] = True
                     await msg.channel.send("Hello, {}! ♪".format(msg.author.mention) + '\nWe keep trading casual on this server, so trades for shinies, events, legendaries, and Dittos are not allowed. Please see the channel topic for a more detailed explanation!')
