@@ -110,7 +110,7 @@ async def unbanLoop():
     global watchlist
     await client.wait_until_ready()
     while not client.is_closed():
-        await asyncio.sleep(30) # timers mesured in hours to go
+        await asyncio.sleep(360) # timers mesured in hours to go
         watchlist = {}
         db.run("UPDATE tempbans SET time = time - 1")
         unbanlist = db.all('SELECT id FROM tempbans WHERE time <= 0')
@@ -197,7 +197,7 @@ async def on_message(msg):
                 await targetchn.send(' '.join(splitmes[2:]))
                 await msg.channel.send('Message sent.')
             elif splitmes[0] == ';help':
-                await commandChn.send(';get - What words are being watched for.\n;set - Add a word.\n;rm - Remove a word.\n;send <UserID> <Message> - Send a message to a user with Chatty\n;perma - Take a user off Chatty\'s auto-unban.')
+                await commandChn.send(';get - What words are being watched for.\n;set - Add a word.\n;rm - Remove a word.\n;send <UserID> <Message> - Send a message to a user with Chatty\n;perma <UserID> - Take a user off Chatty\'s auto-unban.')
             #else:
             #    await commandChn.send('What do I do with this?')
         return
@@ -218,7 +218,7 @@ async def on_message(msg):
                 warnmess.add_field(name = 'Message', value = msg.content, inline = False)
                 await logChn.send(embed = warnmess)
                 if msg.author.id in watchlist:
-                    await banUser(msg.author, msg.guild, 2, 'Multiple trade violations', "You've been banned for one day due to repeatedly trying to trade prohibited Pokemon. If you believe this was a mistake, you can appeal your ban here: https://www.reddit.com/message/compose?to=%2Fr%2Fpokemonmaxraids")
+                    await banUser(msg.author, msg.guild, 24, 'Multiple trade violations', "You've been banned for one day due to repeatedly trying to trade prohibited Pokemon. If you believe this was a mistake, you can appeal your ban here: https://www.reddit.com/message/compose?to=%2Fr%2Fpokemonmaxraids")
                 else:
                     watchlist[msg.author.id] = True
                     await msg.channel.send("Hello, {}! ♪".format(msg.author.mention) + '\nWe keep trading casual on this server, so trades for shinies, events, legendaries, and Dittos are not allowed. Please see the channel topic for a more detailed explanation!')
