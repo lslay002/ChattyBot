@@ -129,6 +129,8 @@ async def unbanLoop():
             except:
                 await logChn.send('Something went wrong unbanning User ID: ' + str(unbanid))
             db.run("DELETE FROM tempbans WHERE id = %(uid)s", uid = unbanid)
+            
+    print('unbanloop ended')
 
 # Monitor all messages for danger words and report them to the mods
 # Also reply to messages with certian mentions in them
