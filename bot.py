@@ -32,12 +32,25 @@ def loadKeywords():
         tempm = f.read().split(' | ')
     return tempm
 
+helptext = (
+    ';get - What words are being watched for.\n'
+    ';set - Add a word.\n'
+    ';rm - Remove a word.\n'
+    ';getr - What words are being autoremoved.\n'
+    ';setr - Add a word to autoremove.\n'
+    ';rmr - Remove a word from autoremove.\n'
+    ';send <UserID> <Message> - Send a message to a user with Chatty\n'
+    ';perma <UserID> - Take a user off Chatty\'s auto-unban.'
+)
+
 warninglist = []
+removelist = []
 watchlist = {}
 mention_dict = loadMentions()
 keywordsFile = loadKeywords()
 db = postgres.Postgres(url = os.environ.get('DATABASE_URL'))
 db.run("CREATE TABLE IF NOT EXISTS forbidden (words text)")
+db.run("CREATE TABLE IF NOT EXISTS vile (words text)")
 db.run("CREATE TABLE IF NOT EXISTS tempbans (id bigint PRIMARY KEY, time int)")
 
 client = discord.Client()
@@ -75,6 +88,7 @@ def loadSpecificChn():
 
 # Composed warning (a regex object)
 composedwarning = composeWarning(warninglist)
+composedremove = composeWarning(removelist)
 
 # Chennel spcific Commands, of the form of a dictonary with the IDs as keys, and the contents a list of lists,
 # with the internal lists of the form [flags, RegEx, Message]
@@ -132,7 +146,7 @@ async def unbanLoop():
 @client.event
 async def on_message(msg):
     # Handle commands
-    global warninglist, composedwarning, watchlist
+    global warninglist, composedwarning, watchlist, removelist, composedremove
 
     if not msg.author.bot and msg.channel.type == discord.ChannelType.private:
         warnmess = discord.Embed()
@@ -170,6 +184,24 @@ async def on_message(msg):
                 db.run("DELETE FROM forbidden WHERE words=(%(old)s)", old = splitmes[1])
                 composedwarning = composeWarning(warninglist)
                 await commandChn.send('Word removed.')
+            elif splitmes[0] == ';getr':
+                await commandChn.send(', '.join(map(lambda x: '`' + x + '`', removelist)))
+            elif splitmes[0] == ';setr':
+                if len(splitmes) == 1:
+                    await commandChn.send('What word or regular expression would you like to be removed?')
+                    return
+                removelist.append(splitmes[1])
+                db.run("INSERT INTO vile VALUES (%(new)s)", new = splitmes[1])
+                composedremove = composeWarning(removelist)
+                await commandChn.send('Word added.')
+            elif splitmes[0] == ';rmr':
+                if len(splitmes) == 1:
+                    await commandChn.send('What word or regular expression would you like to not be removed?')
+                    return
+                removelist.remove(splitmes[1])
+                db.run("DELETE FROM vile WHERE words=(%(old)s)", old = splitmes[1])
+                composedremove = composeWarning(removelist)
+                await commandChn.send('Word removed.')
             elif splitmes[0] == ';perma':
                 if len(splitmes) == 1:
                     await commandChn.send('What user would you no longer like to come back?')
@@ -197,13 +229,28 @@ async def on_message(msg):
                 await targetchn.send(' '.join(splitmes[2:]))
                 await msg.channel.send('Message sent.')
             elif splitmes[0] == ';help':
-                await commandChn.send(';get - What words are being watched for.\n;set - Add a word.\n;rm - Remove a word.\n;send <UserID> <Message> - Send a message to a user with Chatty\n;perma <UserID> - Take a user off Chatty\'s auto-unban.')
+                await commandChn.send(helptext)
             #else:
             #    await commandChn.send('What do I do with this?')
         return
         
     # If from a bot or the mods, ignore
     if msg.author.bot or get(msg.author.roles, name = MODROLE):
+        return
+
+    # Remove vile words
+    dangerwords = filter(composedremove.match, msg.content.split())
+
+    cdw = ', '.join(map(str, dangerwords))
+    if cdw != '':
+        warnmess = discord.Embed()
+        warnmess.title = 'Vile Content Removal Report'
+        warnmess.add_field(name = 'User', value = msg.author)
+        warnmess.add_field(name = 'ID', value = msg.author.id)
+        warnmess.add_field(name = 'Channel', value = msg.channel.name, inline = False)
+        warnmess.add_field(name = 'Message', value = msg.content, inline = False)
+        await msg.delete()
+        await logChn.send(embed = warnmess)
         return
 
     # Check user messages for keywords in the trading channel
@@ -280,36 +327,18 @@ async def on_message(msg):
                     await msg.delete()
                     return
 
-# If a user with the Max Host role adds a :pushpin: (📌) reaction to a message, the message will be pinned
-@client.event
-async def on_raw_reaction_add(payload):
-    guild = await client.fetch_guild(guild_id = payload.guild_id)
-    member = await guild.fetch_member(member_id = payload.user_id)
-    channel = client.get_channel(id = payload.channel_id)
-    if payload.emoji.name == "📌" and get(member.roles, name = "Max Host") and channel.name != 'trading':
-        message = await channel.fetch_message(id = payload.message_id)
-        await message.pin()
-
-# If a user with the Max Host role removes a :pushpin: (📌) reaction from the message, the message will be unpinned
-@client.event
-async def on_raw_reaction_remove(payload):
-    guild = await client.fetch_guild(guild_id = payload.guild_id)
-    member = await guild.fetch_member(member_id = payload.user_id)
-    channel = client.get_channel(id = payload.channel_id)
-    if payload.emoji.name == "📌" and get(member.roles, name = "Max Host") and channel.name != 'trading':
-        message = await channel.fetch_message(id = payload.message_id)
-        await message.unpin()
-
 # When bot is ready, open the command channel
 @client.event
 async def on_ready():
-    global commandChn, warninglist, composedwarning, reportChn, logChn, mainServer
+    global commandChn, warninglist, composedwarning, reportChn, logChn, mainServer, composedremove, removelist
     commandChn = client.get_channel(COMMANDCHNNUM)
     reportChn = client.get_channel(REPORTCHNNUM)
     logChn = client.get_channel(LOGCHNNUM)
     mainServer = commandChn.guild
     warninglist = db.all('SELECT words FROM forbidden')
     composedwarning = composeWarning(warninglist)
+    removelist = db.all('SELECT words FROM vile')
+    composedremove = composeWarning(removelist)
     print('Logged in as ' + client.user.name)
 
 # runs the app
