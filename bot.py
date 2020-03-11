@@ -36,6 +36,9 @@ helptext = (
     ';get - What words are being watched for.\n'
     ';set - Add a word.\n'
     ';rm - Remove a word.\n'
+    ';getr - What words are being autoremoved.\n'
+    ';setr - Add a word to autoremove.\n'
+    ';rmr - Remove a word from autoremove.\n'
     ';send <UserID> <Message> - Send a message to a user with Chatty\n'
     ';perma <UserID> - Take a user off Chatty\'s auto-unban.'
 )
