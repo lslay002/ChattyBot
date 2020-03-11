@@ -32,6 +32,14 @@ def loadKeywords():
         tempm = f.read().split(' | ')
     return tempm
 
+helptext = (
+    ';get - What words are being watched for.\n'
+    ';set - Add a word.\n'
+    ';rm - Remove a word.\n'
+    ';send <UserID> <Message> - Send a message to a user with Chatty\n'
+    ';perma <UserID> - Take a user off Chatty\'s auto-unban.'
+)
+
 warninglist = []
 watchlist = {}
 mention_dict = loadMentions()
@@ -197,7 +205,7 @@ async def on_message(msg):
                 await targetchn.send(' '.join(splitmes[2:]))
                 await msg.channel.send('Message sent.')
             elif splitmes[0] == ';help':
-                await commandChn.send(';get - What words are being watched for.\n;set - Add a word.\n;rm - Remove a word.\n;send <UserID> <Message> - Send a message to a user with Chatty\n;perma <UserID> - Take a user off Chatty\'s auto-unban.')
+                await commandChn.send(helptext)
             #else:
             #    await commandChn.send('What do I do with this?')
         return
