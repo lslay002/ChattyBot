@@ -283,7 +283,7 @@ async def on_message(msg):
         if temp:
             await temp.add_roles(mainServer.get_role(settings.autoCallRole))
             tmchn = client.get_channel(settings.autoCallChn)
-            await tmchn.send('Hello, {}!\nYou are currently muted. Please take a moment to review our #rules. @Mods will be with you as soon as possible.'.format(temp.mention))
+            await tmchn.send('Hello, {}!\nYou are currently muted. Please take a moment to review our <#{}>. <@&{}> will be with you as soon as possible.'.format(temp.mention, settings.ruleChn, settings.modRole))
         return
 
     # Check user messages for keywords in the trading channel
