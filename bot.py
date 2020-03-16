@@ -282,7 +282,7 @@ async def on_message(msg):
         await logChn.send(embed = warnmess)
         if temp:
             await temp.add_roles(mainServer.get_role(settings.autoCallRole))
-            tmchn = client.get_channel(autoCallChn)
+            tmchn = client.get_channel(settings.autoCallChn)
             await tmchn.send('Hello, {}!\nYou are currently muted. Please take a moment to review our #rules. @Mods will be with you as soon as possible.'.format(temp.mention))
         return
 
