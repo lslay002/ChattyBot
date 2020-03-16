@@ -8,6 +8,7 @@ import asyncio
 import os
 import re
 import postgres
+import settings
 from discord.utils import get
 
 # Establish settings and IO helpers
@@ -39,18 +40,23 @@ helptext = (
     ';getr - What words are being autoremoved.\n'
     ';setr - Add a word to autoremove.\n'
     ';rmr - Remove a word from autoremove.\n'
+    ';getm - What words are being automuted.\n'
+    ';setm - Add a word to automute.\n'
+    ';rmm - Remove a word from automute.\n'
     ';send <UserID> <Message> - Send a message to a user with Chatty\n'
     ';perma <UserID> - Take a user off Chatty\'s auto-unban.'
 )
 
 warninglist = []
 removelist = []
+mutelist = []
 watchlist = {}
 mention_dict = loadMentions()
 keywordsFile = loadKeywords()
 db = postgres.Postgres(url = os.environ.get('DATABASE_URL'))
 db.run("CREATE TABLE IF NOT EXISTS forbidden (words text)")
 db.run("CREATE TABLE IF NOT EXISTS vile (words text)")
+db.run("CREATE TABLE IF NOT EXISTS automute (words text)")
 db.run("CREATE TABLE IF NOT EXISTS tempbans (id bigint PRIMARY KEY, time int)")
 
 client = discord.Client()
@@ -89,6 +95,7 @@ def loadSpecificChn():
 # Composed warning (a regex object)
 composedwarning = composeWarning(warninglist)
 composedremove = composeWarning(removelist)
+composedmute = composeWarning(mutelist, False)
 
 # Chennel spcific Commands, of the form of a dictonary with the IDs as keys, and the contents a list of lists,
 # with the internal lists of the form [flags, RegEx, Message]
@@ -146,7 +153,7 @@ async def unbanLoop():
 @client.event
 async def on_message(msg):
     # Handle commands
-    global warninglist, composedwarning, watchlist, removelist, composedremove
+    global warninglist, composedwarning, watchlist, removelist, composedremove, mutelist, composedmute
 
     if not msg.author.bot and msg.channel.type == discord.ChannelType.private:
         warnmess = discord.Embed()
@@ -202,6 +209,24 @@ async def on_message(msg):
                 db.run("DELETE FROM vile WHERE words=(%(old)s)", old = splitmes[1])
                 composedremove = composeWarning(removelist)
                 await commandChn.send('Word removed.')
+            elif splitmes[0] == ';getm':
+                await commandChn.send(', '.join(map(lambda x: '`' + x + '`', mutelist)))
+            elif splitmes[0] == ';setm':
+                if len(splitmes) == 1:
+                    await commandChn.send('What word or regular expression would you like to be an automute?')
+                    return
+                mutelist.append(splitmes[1])
+                db.run("INSERT INTO automute VALUES (%(new)s)", new = splitmes[1])
+                composedmute = composeWarning(mutelist, False)
+                await commandChn.send('Word added.')
+            elif splitmes[0] == ';rmm':
+                if len(splitmes) == 1:
+                    await commandChn.send('What word or regular expression would you like to not be an automute?')
+                    return
+                mutelist.remove(splitmes[1])
+                db.run("DELETE FROM automute WHERE words=(%(old)s)", old = splitmes[1])
+                composedmute = composeWarning(mutelist, False)
+                await commandChn.send('Word removed.')
             elif splitmes[0] == ';perma':
                 if len(splitmes) == 1:
                     await commandChn.send('What user would you no longer like to come back?')
@@ -243,6 +268,10 @@ async def on_message(msg):
 
     cdw = ', '.join(map(str, dangerwords))
     if cdw != '':
+        if composedmute.search(cdw):
+            temp = msg.author
+        else:
+            temp = None
         warnmess = discord.Embed()
         warnmess.title = 'Vile Content Removal Report'
         warnmess.add_field(name = 'User', value = msg.author)
@@ -251,6 +280,10 @@ async def on_message(msg):
         warnmess.add_field(name = 'Message', value = msg.content, inline = False)
         await msg.delete()
         await logChn.send(embed = warnmess)
+        if temp:
+            await temp.add_roles(mainServer.get_role(settings.autoCallRole))
+            tmchn = client.get_channel(autoCallChn)
+            await tmchn.send('Hello, {}!\nYou are currently muted. Please take a moment to review our #rules. @Mods will be with you as soon as possible.'.format(temp.mention))
         return
 
     # Check user messages for keywords in the trading channel
@@ -331,6 +364,7 @@ async def on_message(msg):
 @client.event
 async def on_ready():
     global commandChn, warninglist, composedwarning, reportChn, logChn, mainServer, composedremove, removelist
+    global mutelist, composedmute
     commandChn = client.get_channel(COMMANDCHNNUM)
     reportChn = client.get_channel(REPORTCHNNUM)
     logChn = client.get_channel(LOGCHNNUM)
@@ -339,6 +373,8 @@ async def on_ready():
     composedwarning = composeWarning(warninglist)
     removelist = db.all('SELECT words FROM vile')
     composedremove = composeWarning(removelist)
+    mutelist = db.all('SELECT words FROM automute')
+    composedmute = composeWarning(mutelist, False)
     print('Logged in as ' + client.user.name)
 
 # runs the app
