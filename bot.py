@@ -156,11 +156,15 @@ async def on_message(msg):
     global warninglist, composedwarning, watchlist, removelist, composedremove, mutelist, composedmute
 
     if not msg.author.bot and msg.channel.type == discord.ChannelType.private:
+        attach = ''
         warnmess = discord.Embed()
         warnmess.title = 'User Report'
         warnmess.add_field(name = 'User', value = msg.author)
         warnmess.add_field(name = 'ID', value = msg.author.id)
         warnmess.add_field(name = 'Report Contents', value = msg.content, inline = False)
+        attach = '\n'.join(map(lambda x: x.url, msg.attachments))
+        if attach != '':
+            warnmess.add_field(name = 'Attachments', value = attach, inline = False)
         warnmess.set_footer(text = 'To reply to a user with a message from Chatty, use ;send <UserID> <Message>')
         await reportChn.send(embed = warnmess)
         return
@@ -277,6 +281,7 @@ async def on_message(msg):
         warnmess.add_field(name = 'User', value = msg.author)
         warnmess.add_field(name = 'ID', value = msg.author.id)
         warnmess.add_field(name = 'Channel', value = msg.channel.name, inline = False)
+        warnmess.add_field(name = 'Words', value = cdw)
         warnmess.add_field(name = 'Message', value = msg.content, inline = False)
         await msg.delete()
         await logChn.send(embed = warnmess)
@@ -295,6 +300,7 @@ async def on_message(msg):
                 warnmess.add_field(name = 'User', value = msg.author)
                 warnmess.add_field(name = 'ID', value = msg.author.id)
                 warnmess.add_field(name = 'Channel', value = 'Trading', inline = False)
+                warnmess.add_field(name = 'Word', value = keywords)
                 warnmess.add_field(name = 'Message', value = msg.content, inline = False)
                 await logChn.send(embed = warnmess)
                 if msg.author.id in watchlist:
@@ -347,12 +353,15 @@ async def on_message(msg):
                             await reportChn.send(embed = warnmess)
                     elif flag == 'r':
                         await msg.channel.send(command[2])
+                    elif flag == 'f':
+                        await msg.channel.send(command[2].format(msg.author.mention))
                     elif flag == 'd':
                         warnmess = discord.Embed()
                         warnmess.title = 'Removal Report'
                         warnmess.add_field(name = 'User', value = msg.author)
                         warnmess.add_field(name = 'ID', value = msg.author.id)
                         warnmess.add_field(name = 'Channel', value = msg.channel.name, inline = False)
+                        warnmess.add_field(name = 'Words', value = chkwords)
                         warnmess.add_field(name = 'Message', value = msg.content, inline = False)
                         await logChn.send(embed = warnmess)
                         dele = True
