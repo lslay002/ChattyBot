@@ -281,7 +281,7 @@ async def on_message(msg):
         warnmess.add_field(name = 'User', value = msg.author)
         warnmess.add_field(name = 'ID', value = msg.author.id)
         warnmess.add_field(name = 'Channel', value = msg.channel.name, inline = False)
-        warnmess.add_field(name = 'Words', value = cdw)
+        warnmess.add_field(name = 'Words', value = cdw, inline = True)
         warnmess.add_field(name = 'Message', value = msg.content, inline = False)
         await msg.delete()
         await logChn.send(embed = warnmess)
@@ -300,7 +300,7 @@ async def on_message(msg):
                 warnmess.add_field(name = 'User', value = msg.author)
                 warnmess.add_field(name = 'ID', value = msg.author.id)
                 warnmess.add_field(name = 'Channel', value = 'Trading', inline = False)
-                warnmess.add_field(name = 'Word', value = keywords)
+                warnmess.add_field(name = 'Word', value = keywords, inline = True)
                 warnmess.add_field(name = 'Message', value = msg.content, inline = False)
                 await logChn.send(embed = warnmess)
                 if msg.author.id in watchlist:
@@ -361,7 +361,7 @@ async def on_message(msg):
                         warnmess.add_field(name = 'User', value = msg.author)
                         warnmess.add_field(name = 'ID', value = msg.author.id)
                         warnmess.add_field(name = 'Channel', value = msg.channel.name, inline = False)
-                        warnmess.add_field(name = 'Words', value = chkwords)
+                        warnmess.add_field(name = 'Words', value = chkwords, inline = True)
                         warnmess.add_field(name = 'Message', value = msg.content, inline = False)
                         await logChn.send(embed = warnmess)
                         dele = True
