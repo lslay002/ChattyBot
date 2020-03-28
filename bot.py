@@ -44,6 +44,7 @@ helptext = (
     ';setm - Add a word to automute.\n'
     ';rmm - Remove a word from automute.\n'
     ';send <UserID> <Message> - Send a message to a user with Chatty\n'
+    ';echo <ChannelID> <Message> - Send a message to a channel with Chatty\n'
     ';perma <UserID> - Take a user off Chatty\'s auto-unban.'
 )
 
@@ -257,14 +258,30 @@ async def on_message(msg):
                     targetchn = target.dm_channel
                 await targetchn.send(' '.join(splitmes[2:]))
                 await msg.channel.send('Message sent.')
+            elif splitmes[0] == ';echo':
+                if len(splitmes) == 1:
+                    await msg.channel.send('Where would you like to send a message to?')
+                    return
+                if len(splitmes) == 2:
+                    await msg.channel.send('What message would you like to send?')
+                    return
+                if not str(splitmes[1]).isdigit():
+                    await msg.channel.send('Please use a ChannelID as a target of where to send to.')
+                    return
+                target = client.get_channel(int(splitmes[1]))
+                if target == None:
+                    await msg.channel.send('Channel not found.')
+                    return
+                await target.send(' '.join(splitmes[2:]))
+                await msg.channel.send('Message sent.')
             elif splitmes[0] == ';help':
                 await commandChn.send(helptext)
             #else:
             #    await commandChn.send('What do I do with this?')
         return
         
-    # If from a bot or the mods, ignore
-    if msg.author.bot or get(msg.author.roles, name = MODROLE):
+    # If from a bot or the mods or in the Muted Channel, ignore
+    if msg.author.bot or get(msg.author.roles, name = MODROLE) or msg.channel.id == settings.autoCallChn:
         return
 
     # Remove vile words
@@ -281,7 +298,7 @@ async def on_message(msg):
         warnmess.add_field(name = 'User', value = msg.author)
         warnmess.add_field(name = 'ID', value = msg.author.id)
         warnmess.add_field(name = 'Channel', value = msg.channel.name, inline = False)
-        warnmess.add_field(name = 'Words', value = cdw, inline = True)
+        #warnmess.add_field(name = 'Words', value = cdw, inline = True)
         warnmess.add_field(name = 'Message', value = msg.content, inline = False)
         await msg.delete()
         await logChn.send(embed = warnmess)
@@ -300,7 +317,7 @@ async def on_message(msg):
                 warnmess.add_field(name = 'User', value = msg.author)
                 warnmess.add_field(name = 'ID', value = msg.author.id)
                 warnmess.add_field(name = 'Channel', value = 'Trading', inline = False)
-                warnmess.add_field(name = 'Word', value = keywords, inline = True)
+                #warnmess.add_field(name = 'Word', value = keywords, inline = True)
                 warnmess.add_field(name = 'Message', value = msg.content, inline = False)
                 await logChn.send(embed = warnmess)
                 if msg.author.id in watchlist:
@@ -361,7 +378,7 @@ async def on_message(msg):
                         warnmess.add_field(name = 'User', value = msg.author)
                         warnmess.add_field(name = 'ID', value = msg.author.id)
                         warnmess.add_field(name = 'Channel', value = msg.channel.name, inline = False)
-                        warnmess.add_field(name = 'Words', value = chkwords, inline = True)
+                        #warnmess.add_field(name = 'Words', value = chkwords, inline = True)
                         warnmess.add_field(name = 'Message', value = msg.content, inline = False)
                         await logChn.send(embed = warnmess)
                         dele = True
