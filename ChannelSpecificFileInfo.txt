@@ -10,6 +10,7 @@ Example:
 
 Flags:
 d - Delete the message. This will automatically create a Removal Report in the log channel
+f - Reply to the message with the optional message, formatted with a mention of the user who had a message deleted replacing {}
 r - Reply to the message with the optional message
 l - Log the message in the log channel
 c - Log the message in the Command Channel
