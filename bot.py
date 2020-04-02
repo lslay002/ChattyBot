@@ -162,7 +162,8 @@ async def on_message(msg):
         warnmess.title = 'User Report'
         warnmess.add_field(name = 'User', value = msg.author)
         warnmess.add_field(name = 'ID', value = msg.author.id)
-        warnmess.add_field(name = 'Report Contents', value = msg.content, inline = False)
+        if msg.content != '':
+            warnmess.add_field(name = 'Report Contents', value = msg.content, inline = False)
         attach = '\n'.join(map(lambda x: x.url, msg.attachments))
         if attach != '':
             warnmess.add_field(name = 'Attachments', value = attach, inline = False)
