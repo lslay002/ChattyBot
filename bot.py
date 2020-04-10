@@ -292,7 +292,7 @@ async def on_message(msg):
                     bantext = "You have been banned from " + settings.guildName + ". " + settings.appealMes
                 else:
                     reason = ' '.join(splitmes[2:])
-                    bantext = "You have been banned from " + settings.guildName + " for the following reasons:\n`" + reasons + "`\n" + settings.appealMes
+                    bantext = "You have been banned from " + settings.guildName + " for the following reasons:\n`" + reason + "`\n" + settings.appealMes
                 await banUser(target, msg.guild, -1, reason, bantext)
             elif splitmes[0] == ';help':
                 await commandChn.send(helptext)
