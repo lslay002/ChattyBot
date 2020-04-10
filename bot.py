@@ -46,6 +46,7 @@ helptext = (
     ';send <UserID> <Message> - Send a message to a user with Chatty\n'
     ';echo <ChannelID> <Message> - Send a message to a channel with Chatty\n'
     ';perma <UserID> - Take a user off Chatty\'s auto-unban.'
+    ';ban <UserID> <Reason (optional)> - Bans the given user with a message.'
 )
 
 warninglist = []
@@ -119,9 +120,9 @@ async def banUser(user, guild, time = -1, reason = None, message =  None):
     if time != -1:
         db.run("INSERT INTO tempbans VALUES (%(newid)s, %(duration)s)", newid = user.id, duration = time)
     
-    warnmess = discord.Embed()
+    warnmess = discord.Embed(color = 0x810e0e)
     warnmess.title = 'User Banned'
-    warnmess.add_field(name = 'User', value = user)
+    warnmess.add_field(name = 'User', value = user.mention)
     warnmess.add_field(name = 'ID', value = user.id)
     if reason != None:
         warnmess.add_field(name = 'Reason', value = reason, inline = False)
@@ -160,7 +161,7 @@ async def on_message(msg):
         attach = ''
         warnmess = discord.Embed()
         warnmess.title = 'User Report'
-        warnmess.add_field(name = 'User', value = msg.author)
+        warnmess.add_field(name = 'User', value = msg.author.mention)
         warnmess.add_field(name = 'ID', value = msg.author.id)
         if msg.content != '':
             warnmess.add_field(name = 'Report Contents', value = msg.content, inline = False)
@@ -275,6 +276,24 @@ async def on_message(msg):
                     return
                 await target.send(' '.join(splitmes[2:]))
                 await msg.channel.send('Message sent.')
+            elif splitmes[0] == ';ban':
+                if len(splitmes) == 1:
+                    await msg.channel.send('Who would you like to ban?')
+                    return
+                if not str(splitmes[1]).isdigit():
+                    await msg.channel.send('Please use a UserID as a target of who to send to.')
+                    return
+                target = client.get_user(int(splitmes[1]))
+                if target == None:
+                    await msg.channel.send('User not found.')
+                    return
+                if len(splitmes) == 2:
+                    reason = None
+                    bantext = "You have been banned from " + settings.guildName + ". " + settings.appealMes
+                else:
+                    reason = ' '.join(splitmes[2:])
+                    bantext = "You have been banned from " + settings.guildName + " for the following reasons:\n`" + reasons + "`\n" + settings.appealMes
+                await banUser(target, msg.guild, -1, reason, bantext)
             elif splitmes[0] == ';help':
                 await commandChn.send(helptext)
             #else:
@@ -296,7 +315,7 @@ async def on_message(msg):
             temp = None
         warnmess = discord.Embed()
         warnmess.title = 'Vile Content Removal Report'
-        warnmess.add_field(name = 'User', value = msg.author)
+        warnmess.add_field(name = 'User', value = msg.author.mention)
         warnmess.add_field(name = 'ID', value = msg.author.id)
         warnmess.add_field(name = 'Channel', value = msg.channel.name, inline = False)
         #warnmess.add_field(name = 'Words', value = cdw, inline = True)
@@ -315,7 +334,7 @@ async def on_message(msg):
             if keywords in msg.content.lower():
                 warnmess = discord.Embed()
                 warnmess.title = 'Removal Report'
-                warnmess.add_field(name = 'User', value = msg.author)
+                warnmess.add_field(name = 'User', value = msg.author.mention)
                 warnmess.add_field(name = 'ID', value = msg.author.id)
                 warnmess.add_field(name = 'Channel', value = 'Trading', inline = False)
                 #warnmess.add_field(name = 'Word', value = keywords, inline = True)
@@ -336,7 +355,7 @@ async def on_message(msg):
     if cdw != '':
         warnmess = discord.Embed()
         warnmess.title = 'Warning Report'
-        warnmess.add_field(name = 'User', value = msg.author)
+        warnmess.add_field(name = 'User', value = msg.author.mention)
         warnmess.add_field(name = 'Words Used', value = cdw)
         warnmess.add_field(name = 'Message Link', value = msg.jump_url, inline = False)
         await commandChn.send(embed = warnmess)
@@ -359,7 +378,7 @@ async def on_message(msg):
                     if flag in 'lct':
                         warnmess = discord.Embed()
                         warnmess.title = 'Channel Specific Warning Report'
-                        warnmess.add_field(name = 'User', value = msg.author)
+                        warnmess.add_field(name = 'User', value = msg.author.mention)
                         warnmess.add_field(name = 'Words Used', value = chkwords)
                         warnmess.add_field(name = 'Message Link', value = msg.jump_url, inline = False)
 
@@ -376,7 +395,7 @@ async def on_message(msg):
                     elif flag == 'd':
                         warnmess = discord.Embed()
                         warnmess.title = 'Removal Report'
-                        warnmess.add_field(name = 'User', value = msg.author)
+                        warnmess.add_field(name = 'User', value = msg.author.mention)
                         warnmess.add_field(name = 'ID', value = msg.author.id)
                         warnmess.add_field(name = 'Channel', value = msg.channel.name, inline = False)
                         #warnmess.add_field(name = 'Words', value = chkwords, inline = True)
