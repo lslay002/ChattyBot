@@ -45,7 +45,7 @@ helptext = (
     ';rmm - Remove a word from automute.\n'
     ';send <UserID> <Message> - Send a message to a user with Chatty\n'
     ';echo <ChannelID> <Message> - Send a message to a channel with Chatty\n'
-    ';perma <UserID> - Take a user off Chatty\'s auto-unban.'
+    ';perma <UserID> - Take a user off Chatty\'s auto-unban.\n'
     ';ban <UserID> <Reason (optional)> - Bans the given user with a message.'
 )
 
