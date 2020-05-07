@@ -144,7 +144,7 @@ async def unbanUser(userid):
         await logChn.send(embed = warnmess)
         db.run("DELETE FROM tempbans WHERE id=(%(old)s)", old = userid)
     except:
-        await logChn.send('Something went wrong unbanning User ID: ' + str(unbanid))
+        await logChn.send('Something went wrong unbanning User ID: ' + str(userid))
     
 
 # Event loop to handle unbanning users that have been tempbanned, also clears the watchlist
@@ -257,11 +257,7 @@ async def on_message(msg):
                 if not str(splitmes[1]).isdigit():
                     await msg.channel.send('Please use a UserID as a target of who to unaban.')
                     return
-                target = client.fetch_user(int(splitmes[1]))
-                if target == None:
-                    await msg.channel.send('User not found.')
-                    return
-                await unbanUser(target)
+                await unbanUser(int(splitmes[1]))
             elif splitmes[0] == ';send':
                 if len(splitmes) == 1:
                     await msg.channel.send('Who would you like to send a message to?')
