@@ -302,7 +302,7 @@ async def on_message(msg):
                     await msg.channel.send('Please use a UserID as a target of who to send to.')
                     return
                 target = client.get_user(int(splitmes[1]))
-                if target == None:
+                if target != None:
                     if len(splitmes) == 2:
                         reason = None
                         bantext = "You have been banned from " + settings.guildName + ". " + settings.appealMes
@@ -310,7 +310,7 @@ async def on_message(msg):
                         reason = ' '.join(splitmes[2:])
                         bantext = "You have been banned from " + settings.guildName + " for the following reasons:\n`" + reason + "`\n" + settings.appealMes
                 else:
-                    terget = client.fetch_user(int(splitmes[1]))
+                    terget = await client.fetch_user(int(splitmes[1]))
                     if len(splitmes) == 2:
                         reason = None
                         bantext = None
