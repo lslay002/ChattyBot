@@ -310,7 +310,6 @@ async def on_message(msg):
                         reason = ' '.join(splitmes[2:])
                         bantext = "You have been banned from " + settings.guildName + " for the following reasons:\n`" + reason + "`\n" + settings.appealMes
                 else:
-                    print("fetching")
                     target = await client.fetch_user(int(splitmes[1]))
                     if len(splitmes) == 2:
                         reason = None
