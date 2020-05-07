@@ -137,7 +137,7 @@ async def unbanUser(userid):
     try:
         hold = await client.fetch_user(userid)
         await mainServer.unban(hold)
-        warnmess = discord.Embed()
+        warnmess = discord.Embed(color = 0x4044df)
         warnmess.title = 'User Unbanned'
         warnmess.add_field(name = 'User', value = hold)
         warnmess.add_field(name = 'ID', value = userid)
