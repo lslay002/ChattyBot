@@ -46,7 +46,8 @@ helptext = (
     ';send <UserID> <Message> - Send a message to a user with Chatty\n'
     ';echo <ChannelID> <Message> - Send a message to a channel with Chatty\n'
     ';perma <UserID> - Take a user off Chatty\'s auto-unban.\n'
-    ';ban <UserID> <Reason (optional)> - Bans the given user with a message.'
+    ';ban <UserID> <Reason (optional)> - Bans the given user with a message.\n'
+    ';unban <UserID> - Unbans the given user.'
 )
 
 warninglist = []
@@ -106,11 +107,14 @@ csCommands = loadSpecificChn()
 # Helper method to ban users and send messages.
 async def banUser(user, guild, time = -1, reason = None, message =  None):
     if message != None:
-        targetchn = user.dm_channel
-        if targetchn == None:
-            await user.create_dm()
+        try:
             targetchn = user.dm_channel
-        await targetchn.send(message)
+            if targetchn == None:
+                await user.create_dm()
+                targetchn = user.dm_channel
+            await targetchn.send(message)
+        except:
+            await logChn.send("Unable to send message to user " + user)
         
     if reason != None:
         await guild.ban(user, reason = reason, delete_message_days = 0)
@@ -128,6 +132,21 @@ async def banUser(user, guild, time = -1, reason = None, message =  None):
         warnmess.add_field(name = 'Reason', value = reason, inline = False)
     await logChn.send(embed = warnmess)
 
+# Unbanning functions, seperated to allow code reuse.
+async def unbanUser(userid):
+    try:
+        hold = await client.fetch_user(userid)
+        await mainServer.unban(hold)
+        warnmess = discord.Embed()
+        warnmess.title = 'User Unbanned'
+        warnmess.add_field(name = 'User', value = hold)
+        warnmess.add_field(name = 'ID', value = userid)
+        await logChn.send(embed = warnmess)
+        db.run("DELETE FROM tempbans WHERE id=(%(old)s)", old = userid)
+    except:
+        await logChn.send('Something went wrong unbanning User ID: ' + str(unbanid))
+    
+
 # Event loop to handle unbanning users that have been tempbanned, also clears the watchlist
 async def unbanLoop():
     global watchlist
@@ -138,16 +157,7 @@ async def unbanLoop():
         db.run("UPDATE tempbans SET time = time - 1")
         unbanlist = db.all('SELECT id FROM tempbans WHERE time <= 0')
         for unbanid in unbanlist:
-            try:
-                hold = await client.fetch_user(unbanid)
-                await mainServer.unban(hold)
-                warnmess = discord.Embed()
-                warnmess.title = 'User Unbanned'
-                warnmess.add_field(name = 'User', value = hold)
-                warnmess.add_field(name = 'ID', value = unbanid)
-                await logChn.send(embed = warnmess)
-            except:
-                await logChn.send('Something went wrong unbanning User ID: ' + str(unbanid))
+            await unbanUser(unbanid)
             db.run("DELETE FROM tempbans WHERE id = %(uid)s", uid = unbanid)
 
 # Monitor all messages for danger words and report them to the mods
@@ -240,6 +250,18 @@ async def on_message(msg):
                     return
                 db.run("DELETE FROM tempbans WHERE id=(%(old)s)", old = splitmes[1])
                 await commandChn.send('User removed.')
+            elif splitmes[0] == ';unban':
+                if len(splitmes) == 1:
+                    await commandChn.send('What user would you like to unban?')
+                    return
+                if not str(splitmes[1]).isdigit():
+                    await msg.channel.send('Please use a UserID as a target of who to unaban.')
+                    return
+                target = client.fetch_user(int(splitmes[1]))
+                if target == None:
+                    await msg.channel.send('User not found.')
+                    return
+                await unbanUser(target)
             elif splitmes[0] == ';send':
                 if len(splitmes) == 1:
                     await msg.channel.send('Who would you like to send a message to?')
@@ -285,14 +307,23 @@ async def on_message(msg):
                     return
                 target = client.get_user(int(splitmes[1]))
                 if target == None:
+                    if len(splitmes) == 2:
+                        reason = None
+                        bantext = "You have been banned from " + settings.guildName + ". " + settings.appealMes
+                    else:
+                        reason = ' '.join(splitmes[2:])
+                        bantext = "You have been banned from " + settings.guildName + " for the following reasons:\n`" + reason + "`\n" + settings.appealMes
+                else:
+                    terget = client.fetch_user(int(splitmes[1]))
+                    if len(splitmes) == 2:
+                        reason = None
+                        bantext = None
+                    else:
+                        reason = ' '.join(splitmes[2:])
+                        bantext = None
+                if target == None:
                     await msg.channel.send('User not found.')
                     return
-                if len(splitmes) == 2:
-                    reason = None
-                    bantext = "You have been banned from " + settings.guildName + ". " + settings.appealMes
-                else:
-                    reason = ' '.join(splitmes[2:])
-                    bantext = "You have been banned from " + settings.guildName + " for the following reasons:\n`" + reason + "`\n" + settings.appealMes
                 await banUser(target, msg.guild, -1, reason, bantext)
             elif splitmes[0] == ';help':
                 await commandChn.send(helptext)
