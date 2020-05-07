@@ -114,7 +114,7 @@ async def banUser(user, guild, time = -1, reason = None, message =  None):
                 targetchn = user.dm_channel
             await targetchn.send(message)
         except:
-            await logChn.send("Unable to send message to user " + user)
+            await logChn.send("Unable to send message to user " + str(user))
         
     if reason != None:
         await guild.ban(user, reason = reason, delete_message_days = 0)
@@ -310,6 +310,7 @@ async def on_message(msg):
                         reason = ' '.join(splitmes[2:])
                         bantext = "You have been banned from " + settings.guildName + " for the following reasons:\n`" + reason + "`\n" + settings.appealMes
                 else:
+                    print("fetching")
                     terget = await client.fetch_user(int(splitmes[1]))
                     if len(splitmes) == 2:
                         reason = None
