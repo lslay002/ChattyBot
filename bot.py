@@ -359,7 +359,7 @@ async def on_message(msg):
                 await banUser(target, msg.guild, -1, reason, bantext)
             elif splitmes[0] == ';clear':
                 if len(splitmes) == 1:
-                    current = await msg.channel.history(limit = 1, before = msg.id).next()
+                    current = await msg.channel.history(limit = 1, before = msg).next()
                 else:
                     if not str(splitmes[1]).isdigit():
                         await msg.channel.send('Please use a MessageID as an argument.')
@@ -369,7 +369,7 @@ async def on_message(msg):
                 rxnimage = client.get_emoji(settings.reactemote)
                 while current.author == client.user and len(current.reactions) == 0:
                     await current.add_reaction(rxnimage)
-                    current = await msg.channel.history(limit = 1, before = current.id).next()
+                    current = await msg.channel.history(limit = 1, before = current).next()
             elif splitmes[0] == ';help':
                 await commandChn.send(helptext)
             #else:
