@@ -116,7 +116,7 @@ pingchk = re.compile(pingregex)
 def analyzeAnnouncement(message):
     temp = message
     emoji = emojichk.findall(temp)
-    temp = emojichk.sub('', temp)
+    temp = emojichk.sub('E', temp)
     pings = pingchk.findall(temp)
     temp = pingchk.sub('', temp)
     temp, formnum = re.subn(formattingregex, '', temp)
@@ -358,7 +358,7 @@ async def on_message(msg):
                     return
                 await banUser(target, msg.guild, -1, reason, bantext)
             elif splitmes[0] == ';clear':
-                if len(splitmess) == 1:
+                if len(splitmes) == 1:
                     current = await msg.channel.history(limit = 1, before = msg.id).next()
                 else:
                     if not str(splitmes[1]).isdigit():
