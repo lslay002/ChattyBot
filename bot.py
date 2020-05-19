@@ -15,6 +15,7 @@ from discord.utils import get
 MODROLE = "Mods"
 COMMANDCHNNUM = int(os.environ.get('COMMANDCHN'))
 REPORTCHNNUM = int(os.environ.get('REPORTCHN'))
+REMOVECHNNUM = int(os.environ.get('REMOVECHN'))
 LOGCHNNUM = int(os.environ.get('LOGCHN'))
 
 def loadMentions():
@@ -47,7 +48,8 @@ helptext = (
     ';echo <ChannelID> <Message> - Send a message to a channel with Chatty\n'
     ';perma <UserID> - Take a user off Chatty\'s auto-unban.\n'
     ';ban <UserID> <Reason (optional)> - Bans the given user with a message.\n'
-    ';unban <UserID> - Unbans the given user.'
+    ';unban <UserID> - Unbans the given user.\n'
+    ';clear <MessageID (optional)> - Marks each message above this or the given message as read, until  hitting a marked message, or a message not sent by me.'
 )
 
 warninglist = []
@@ -66,6 +68,7 @@ client = discord.Client()
 mainServer = None
 commandChn = None
 reportChn = None
+removeChn = None
 logChn = None
 
 # Helper function to help create the warnings
@@ -103,6 +106,39 @@ composedmute = composeWarning(mutelist, False)
 # Chennel spcific Commands, of the form of a dictonary with the IDs as keys, and the contents a list of lists,
 # with the internal lists of the form [flags, RegEx, Message]
 csCommands = loadSpecificChn()
+
+# Helper method to analyze messages and ID length/emotes/pings
+emojiregex = r'<a?:[^<>\s]+?:[1234567890]+>'
+pingregex = r'<[@#]&?[1234567890]+>'
+formattingregex = r'[`*_]|\|\||~~'
+emojichk = re.compile(emojiregex)
+pingchk = re.compile(pingregex)
+def analyzeAnnouncement(message):
+    temp = message
+    emoji = emojichk.findall(temp)
+    temp = emojichk.sub('E', temp)
+    pings = pingchk.findall(temp)
+    temp = pingchk.sub('', temp)
+    temp, formnum = re.subn(formattingregex, '', temp)
+    return {'length': len(temp),
+            'emoji': emoji,
+            'pings': pings,
+            'formattingamount': formnum,
+            }
+
+async def analyzePost(message, resultschn):
+    ares = analyzeAnnouncement(message.content)
+    warnmess = discord.Embed(color = 0xcfc829)
+    warnmess.title = 'Post Stats'
+    warnmess.add_field(name = 'User', value = message.author.mention)
+    warnmess.add_field(name = 'Channel', value = message.channel.name, inline = False)
+    warnmess.add_field(name = 'Length', value = ares['length'])
+    warnmess.add_field(name = 'Formatting Used', value = ares['formattingamount'])
+    if len(ares['emoji']) != 0:
+        warnmess.add_field(name = 'Emoji Used', value = ' '.join(ares['emoji']), inline = False)
+    if len(ares['pings']) != 0:
+        warnmess.add_field(name = 'Pings Used', value = '\n'.join(ares['pings']))
+    await resultschn.send(embed = warnmess)
 
 # Helper method to ban users and send messages.
 async def banUser(user, guild, time = -1, reason = None, message =  None):
@@ -321,6 +357,19 @@ async def on_message(msg):
                     await msg.channel.send('User not found.')
                     return
                 await banUser(target, msg.guild, -1, reason, bantext)
+            elif splitmes[0] == ';clear':
+                if len(splitmes) == 1:
+                    current = await msg.channel.history(limit = 1, before = msg).next()
+                else:
+                    if not str(splitmes[1]).isdigit():
+                        await msg.channel.send('Please use a MessageID as an argument.')
+                        return
+                    else:
+                        current = await msg.channel.fetch_message(int(splitmes[1]))
+                rxnimage = client.get_emoji(settings.reactemote)
+                while current.author == client.user and len(current.reactions) == 0:
+                    await current.add_reaction(rxnimage)
+                    current = await msg.channel.history(limit = 1, before = current).next()
             elif splitmes[0] == ';help':
                 await commandChn.send(helptext)
             #else:
@@ -348,7 +397,7 @@ async def on_message(msg):
         #warnmess.add_field(name = 'Words', value = cdw, inline = True)
         warnmess.add_field(name = 'Message', value = msg.content, inline = False)
         await msg.delete()
-        await logChn.send(embed = warnmess)
+        await removeChn.send(embed = warnmess)
         if temp:
             await temp.add_roles(mainServer.get_role(settings.autoCallRole))
             tmchn = client.get_channel(settings.autoCallChn)
@@ -366,7 +415,7 @@ async def on_message(msg):
                 warnmess.add_field(name = 'Channel', value = 'Trading', inline = False)
                 #warnmess.add_field(name = 'Word', value = keywords, inline = True)
                 warnmess.add_field(name = 'Message', value = msg.content, inline = False)
-                await logChn.send(embed = warnmess)
+                await removeChn.send(embed = warnmess)
                 if msg.author.id in watchlist:
                     await banUser(msg.author, msg.guild, 24, 'Multiple trade violations', "You've been banned for one day due to repeatedly trying to trade prohibited Pokemon. If you believe this was a mistake, you can appeal your ban here: https://www.reddit.com/message/compose?to=%2Fr%2Fpokemonmaxraids")
                 else:
@@ -392,6 +441,10 @@ async def on_message(msg):
         val = str(mention.id)
         if val in mention_dict:
             await msg.channel.send('\n'.join(map(str, mention_dict[val])))
+
+    # Do things involving the announcements
+    if msg.channel.id == settings.announcechn:
+        await analyzePost(msg, commandChn)
 
     # Handle Channel Specific catchlists
     if str(msg.channel.id) in csCommands:
@@ -427,7 +480,7 @@ async def on_message(msg):
                         warnmess.add_field(name = 'Channel', value = msg.channel.name, inline = False)
                         #warnmess.add_field(name = 'Words', value = chkwords, inline = True)
                         warnmess.add_field(name = 'Message', value = msg.content, inline = False)
-                        await logChn.send(embed = warnmess)
+                        await removeChn.send(embed = warnmess)
                         dele = True
                 if dele:
                     await msg.delete()
@@ -437,10 +490,11 @@ async def on_message(msg):
 @client.event
 async def on_ready():
     global commandChn, warninglist, composedwarning, reportChn, logChn, mainServer, composedremove, removelist
-    global mutelist, composedmute
+    global mutelist, composedmute, removeChn
     commandChn = client.get_channel(COMMANDCHNNUM)
     reportChn = client.get_channel(REPORTCHNNUM)
     logChn = client.get_channel(LOGCHNNUM)
+    removeChn = client.get_channel(REMOVECHNNUM)
     mainServer = commandChn.guild
     warninglist = db.all('SELECT words FROM forbidden')
     composedwarning = composeWarning(warninglist)
