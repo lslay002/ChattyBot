@@ -134,8 +134,10 @@ async def analyzePost(message, resultschn):
     warnmess.add_field(name = 'Channel', value = message.channel.name, inline = False)
     warnmess.add_field(name = 'Length', value = ares['length'])
     warnmess.add_field(name = 'Formatting Used', value = ares['formattingamount'])
-    warnmess.add_field(name = 'Emoji Used', value = '\n'.join(ares['emoji']), inline = False)
-    warnmess.add_field(name = 'Pings Used', value = '\n'.join(ares['pings']))
+    if len(ares['emoji']) != 0:
+        warnmess.add_field(name = 'Emoji Used', value = ' '.join(ares['emoji']), inline = False)
+    if len(ares['pings']) != 0:
+        warnmess.add_field(name = 'Pings Used', value = '\n'.join(ares['pings']))
     await resultschn.send(embed = warnmess)
 
 # Helper method to ban users and send messages.
