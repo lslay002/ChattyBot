@@ -111,19 +111,25 @@ csCommands = loadSpecificChn()
 emojiregex = r'<a?:[^<>\s]+?:[1234567890]+>'
 pingregex = r'<[@#]&?[1234567890]+>'
 formattingregex = r'[`*_]|\|\||~~'
+linkregex = r'[\S]+reddit\.com/r/pokemonmaxraids[\S]+'
 emojichk = re.compile(emojiregex)
 pingchk = re.compile(pingregex)
+linkchk = re.compile(linkregex)
 def analyzeAnnouncement(message):
     temp = message
     emoji = emojichk.findall(temp)
-    temp = emojichk.sub('E', temp)
+    temp = emojichk.sub('', temp)
     pings = pingchk.findall(temp)
     temp = pingchk.sub('', temp)
+    links = linkchk.findall(temp)
+    temp = linkchk.sub('', temp)
     temp, formnum = re.subn(formattingregex, '', temp)
-    return {'length': len(temp),
+    return {'length': len(temp) + len(emoji),
             'emoji': emoji,
             'pings': pings,
             'formattingamount': formnum,
+            'words': len(temp.split()),
+            'links': links
             }
 
 async def analyzePost(message, resultschn):
@@ -133,11 +139,14 @@ async def analyzePost(message, resultschn):
     warnmess.add_field(name = 'User', value = message.author.mention)
     warnmess.add_field(name = 'Channel', value = message.channel.name, inline = False)
     warnmess.add_field(name = 'Length', value = ares['length'])
+    warnmess.add_field(name = 'Words', value = ares['words'])
     warnmess.add_field(name = 'Formatting Used', value = ares['formattingamount'])
-    if len(ares['emoji']) != 0:
-        warnmess.add_field(name = 'Emoji Used', value = ' '.join(ares['emoji']), inline = False)
     if len(ares['pings']) != 0:
         warnmess.add_field(name = 'Pings Used', value = '\n'.join(ares['pings']))
+    if len(ares['emoji']) != 0:
+        warnmess.add_field(name = 'Emoji Used', value = ' '.join(ares['emoji']), inline = False)
+    if len(ares['links']) != 0:
+        warnmess.add_field(name = 'Reddit Link', value = '\n'.join(ares['links']), inline = False)
     await resultschn.send(embed = warnmess)
 
 # Helper method to ban users and send messages.
@@ -189,6 +198,7 @@ async def unbanLoop():
     await client.wait_until_ready()
     while not client.is_closed():
         await asyncio.sleep(360) # timers mesured in hours to go
+        print('Hour Ping')
         watchlist = {}
         db.run("UPDATE tempbans SET time = time - 1")
         unbanlist = db.all('SELECT id FROM tempbans WHERE time <= 0')
@@ -210,12 +220,26 @@ async def on_message(msg):
         warnmess.add_field(name = 'User', value = msg.author.mention)
         warnmess.add_field(name = 'ID', value = msg.author.id)
         if msg.content != '':
-            warnmess.add_field(name = 'Report Contents', value = msg.content, inline = False)
+            if len(msg.content) < 1000:
+                warnmess.add_field(name = 'Report Contents', value = msg.content, inline = False)
+            else:
+                warnmess.add_field(name = 'Report Contents', value = msg.content[:1000], inline = False)
         attach = '\n'.join(map(lambda x: x.url, msg.attachments))
         if attach != '':
             warnmess.add_field(name = 'Attachments', value = attach, inline = False)
-        warnmess.set_footer(text = 'To reply to a user with a message from Chatty, use ;send <UserID> <Message>')
+        if len(msg.content) < 1000:
+            warnmess.set_footer(text = 'To reply to a user with a message from Chatty, use ;send <UserID> <Message>')
+        else:
+            warnmess.set_footer(text = 'Message continued...')
         await reportChn.send(embed = warnmess)
+        if len(msg.content) >= 1000:
+            warnmess = discord.Embed()
+            warnmess.title = 'User Report - Continued'
+            warnmess.add_field(name = 'User', value = msg.author.mention)
+            warnmess.add_field(name = 'ID', value = msg.author.id)
+            warnmess.add_field(name = 'Report Contents', value = msg.content[1000:], inline = False)
+            warnmess.set_footer(text = 'To reply to a user with a message from Chatty, use ;send <UserID> <Message>')
+            await reportChn.send(embed = warnmess)
         return
                 
     if not msg.author.bot and (msg.channel.id == COMMANDCHNNUM or (msg.channel.id == REPORTCHNNUM and msg.content.startswith(';send'))):
@@ -485,6 +509,10 @@ async def on_message(msg):
                 if dele:
                     await msg.delete()
                     return
+
+## Watces edits for if the message breaks removal/other filters
+#@client.event
+#async def on_raw_message_edit(payload):
 
 # When bot is ready, open the command channel
 @client.event
