@@ -197,7 +197,7 @@ async def unbanLoop():
     global watchlist
     await client.wait_until_ready()
     while not client.is_closed():
-        await asyncio.sleep(360) # timers mesured in hours to go
+        await asyncio.sleep(3600) # timers mesured in hours to go
         print('Hour Ping')
         watchlist = {}
         db.run("UPDATE tempbans SET time = time - 1")
