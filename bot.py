@@ -510,10 +510,6 @@ async def on_message(msg):
                     await msg.delete()
                     return
 
-## Watces edits for if the message breaks removal/other filters
-#@client.event
-#async def on_raw_message_edit(payload):
-
 # When bot is ready, open the command channel
 @client.event
 async def on_ready():
