@@ -146,7 +146,7 @@ async def analyzePost(message, resultschn):
     if len(ares['emoji']) != 0:
         warnmess.add_field(name = 'Emoji Used', value = ' '.join(ares['emoji']), inline = False)
     if len(ares['links']) != 0:
-        warnmess.add_field(name = 'Emoji Used', value = '\n'.join(ares['links']), inline = False)
+        warnmess.add_field(name = 'Reddit Link', value = '\n'.join(ares['links']), inline = False)
     await resultschn.send(embed = warnmess)
 
 # Helper method to ban users and send messages.
