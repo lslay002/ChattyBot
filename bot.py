@@ -142,9 +142,9 @@ def timeReader(time = None):
         temp = {'hours': 0, 'days': 0, 'weeks': 0}
         ttime = hourrep
         temp['hours'] = hourrep % 24
-        hourrep /= 24
+        hourrep //= 24
         temp['days'] = hourrep % 7
-        temp['weeks'] = hourrep /7
+        temp['weeks'] = hourrep // 7
     tstring = ''
     if temp['weeks']:
         tstring += str(temp['weeks']) + ' Week'
@@ -390,7 +390,7 @@ async def on_message(msg):
                 if not str(splitmes[1]).isdigit():
                     await msg.channel.send('Please use a UserID as a target of who to check.')
                     return
-                time = timeReader(db.one("SELECT FROM tempbans WHERE id=(%(old)s)", old = splitmes[1]))
+                time = timeReader(db.one("SELECT time FROM tempbans WHERE id=(%(old)s)", old = splitmes[1]))
                 if not time:
                     time = {'stringrep': 'This user is not tempbanned.'}
                 await msg.channel.send(time['stringrep'])
