@@ -48,6 +48,8 @@ helptext = (
     ';echo <ChannelID> <Message> - Send a message to a channel with Chatty\n'
     ';perma <UserID> - Take a user off Chatty\'s auto-unban.\n'
     ';ban <UserID> <Reason (optional)> - Bans the given user with a message.\n'
+    ';tempban <UserID> <Ban Length> <Reason (optional)> - Bans the given user with a message for the given amount of time. Ban length can be in hours or of the form "XwXdXh"\n'
+    ';banstatus <UserID> - returns how long a tempbanned user will remain banned.\n'
     ';unban <UserID> - Unbans the given user.\n'
     ';clear <MessageID (optional)> - Marks each message above this or the given message as read, until  hitting a marked message, or a message not sent by me.'
 )
@@ -106,6 +108,68 @@ composedmute = composeWarning(mutelist, False)
 # Chennel spcific Commands, of the form of a dictonary with the IDs as keys, and the contents a list of lists,
 # with the internal lists of the form [flags, RegEx, Message]
 csCommands = loadSpecificChn()
+
+# Helper method that takes a string of XhXdXw or a number in hours and converts to hours and a textual representation
+timetokenregex = r'(?P<hours>[1234567890]+(?=h))|(?P<days>[1234567890]+(?=d))|(?P<weeks>[1234567890]+(?=w))|(?P<error>[^hwd\s])'
+timetokenizer = re.compile(timetokenregex, re.I)
+def timeReader(time = None):
+    if time == None:
+        return None
+    if time == '':
+        stringrep = None
+        hourrep = 0
+    elif str(time).isdigit():
+        stringrep = None
+        hourrep = int(time)
+    else:
+        stringrep = time
+        hourrep = None
+    if stringrep:
+        temp = {'hours': 0, 'days': 0, 'weeks': 0}
+        for token in timetokenizer.finditer(stringrep):
+            typ = token.lastgroup
+            val = token.group()
+            if typ == 'hours':
+                temp['hours'] += int(val)
+            elif typ == 'weeks':
+                temp['weeks'] += int(val)
+            elif typ == 'days':
+                temp['days'] += int(val)
+            elif typ == 'error':
+                raise RuntimeError('Unexpected formation of time string.')
+        ttime = temp['hours'] + ((temp['days'] + (temp['weeks'] * 7)) * 24)
+    else:
+        temp = {'hours': 0, 'days': 0, 'weeks': 0}
+        ttime = hourrep
+        temp['hours'] = hourrep % 24
+        hourrep /= 24
+        temp['days'] = hourrep % 7
+        temp['weeks'] = hourrep /7
+    tstring = ''
+    if temp['weeks']:
+        tstring += str(temp['weeks']) + ' Week'
+        if temp['weeks'] != 1:
+            tstring += 's'
+    if temp['days']:
+        if tstring != '':
+            if temp['hours']:
+                tstring += ', '
+            else:
+                tstring += ' and '
+        tstring += str(temp['days']) + ' Day'
+        if temp['days'] != 1:
+            tstring += 's'
+    if temp['hours']:
+        if temp['days'] and temp['weeks']:
+            tstring += ', and '
+        elif temp['days'] or temp['weeks']:
+            tstring += ' and '
+        tstring += str(temp['hours']) + ' Hour'
+        if temp['hours'] != 1:
+            tstring += 's'
+    if tstring == '':
+        tstring = '0 Hours'
+    return {'stringrep': tstring, 'hours': ttime}
 
 # Helper method to analyze messages and ID length/emotes/pings
 emojiregex = r'<a?:[^<>\s]+?:[1234567890]+>'
@@ -173,6 +237,8 @@ async def banUser(user, guild, time = -1, reason = None, message =  None):
     warnmess.title = 'User Banned'
     warnmess.add_field(name = 'User', value = user.mention)
     warnmess.add_field(name = 'ID', value = user.id)
+    if time != -1:
+        warnmess.add_field(name = 'Duration', value = timeReader(time)['stringrep'])
     if reason != None:
         warnmess.add_field(name = 'Reason', value = reason, inline = False)
     await logChn.send(embed = warnmess)
@@ -197,14 +263,13 @@ async def unbanLoop():
     global watchlist
     await client.wait_until_ready()
     while not client.is_closed():
-        await asyncio.sleep(360) # timers mesured in hours to go
+        await asyncio.sleep(30) # timers mesured in hours to go
         print('Hour Ping')
         watchlist = {}
         db.run("UPDATE tempbans SET time = time - 1")
         unbanlist = db.all('SELECT id FROM tempbans WHERE time <= 0')
         for unbanid in unbanlist:
             await unbanUser(unbanid)
-            db.run("DELETE FROM tempbans WHERE id = %(uid)s", uid = unbanid)
 
 # Monitor all messages for danger words and report them to the mods
 # Also reply to messages with certian mentions in them
@@ -318,6 +383,17 @@ async def on_message(msg):
                     await msg.channel.send('Please use a UserID as a target of who to unaban.')
                     return
                 await unbanUser(int(splitmes[1]))
+            elif splitmes[0] == ';banstatus':
+                if len(splitmes) == 1:
+                    await commandChn.send('What user would you like to check?')
+                    return
+                if not str(splitmes[1]).isdigit():
+                    await msg.channel.send('Please use a UserID as a target of who to check.')
+                    return
+                time = timeReader(db.one("SELECT FROM tempbans WHERE id=(%(old)s)", old = splitmes[1]))
+                if not time:
+                    time = {'stringrep': 'This user is not tempbanned.'}
+                await msg.channel.send(time['stringrep'])
             elif splitmes[0] == ';send':
                 if len(splitmes) == 1:
                     await msg.channel.send('Who would you like to send a message to?')
@@ -359,7 +435,7 @@ async def on_message(msg):
                     await msg.channel.send('Who would you like to ban?')
                     return
                 if not str(splitmes[1]).isdigit():
-                    await msg.channel.send('Please use a UserID as a target of who to send to.')
+                    await msg.channel.send('Please use a UserID as a target of who to ban.')
                     return
                 target = client.get_user(int(splitmes[1]))
                 if target != None:
@@ -381,6 +457,41 @@ async def on_message(msg):
                     await msg.channel.send('User not found.')
                     return
                 await banUser(target, msg.guild, -1, reason, bantext)
+            elif splitmes[0] == ';tempban':
+                if len(splitmes) == 1:
+                    await msg.channel.send('Who would you like to ban?')
+                    return
+                if len(splitmes) == 2:
+                    await msg.channel.send('How long do you want the ban to be?')
+                    return
+                if not str(splitmes[1]).isdigit():
+                    await msg.channel.send('Please use a UserID as a target of who to ban.')
+                    return
+                try:
+                    duration = timeReader(splitmes[2])
+                except:
+                    await msg.channel.send('Malformed duration. Please use a time of the form XhXdXw or use time in hours.')
+                    return
+                target = client.get_user(int(splitmes[1]))
+                if target != None:
+                    if len(splitmes) == 3:
+                        reason = None
+                        bantext = "You have been banned from " + settings.guildName + " for " + duration['stringrep'] + ". " + settings.appealMes
+                    else:
+                        reason = ' '.join(splitmes[3:])
+                        bantext = "You have been banned from " + settings.guildName + " for " + duration['stringrep'] + " for the following reasons:\n`" + reason + "`\n" + settings.appealMes
+                else:
+                    target = await client.fetch_user(int(splitmes[1]))
+                    if len(splitmes) == 3:
+                        reason = None
+                        bantext = None
+                    else:
+                        reason = ' '.join(splitmes[3:])
+                        bantext = None
+                if target == None:
+                    await msg.channel.send('User not found.')
+                    return
+                await banUser(target, msg.guild, duration['hours'], reason, bantext)
             elif splitmes[0] == ';clear':
                 if len(splitmes) == 1:
                     current = await msg.channel.history(limit = 1, before = msg).next()
