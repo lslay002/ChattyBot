@@ -110,7 +110,7 @@ composedmute = composeWarning(mutelist, False)
 csCommands = loadSpecificChn()
 
 # Helper method that takes a string of XhXdXw or a number in hours and converts to hours and a textual representation
-timetokenregex = r'(?P<hours>[1234567890]+(?=h))|(?P<days>[1234567890]+(?=d))|(?P<weeks>[1234567890]+(?=w))|(?P<error>[^hwd\s])'
+timetokenregex = r'(?P<hours>[1234567890]+(?=h))|(?P<days>[1234567890]+(?=d))|(?P<weeks>[1234567890]+(?=w))|(?P<indicators>(?<=[1234567890])[hwd])|(?P<error>[\S])'
 timetokenizer = re.compile(timetokenregex, re.I)
 def timeReader(time = None):
     if time == None:
