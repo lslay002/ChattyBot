@@ -192,18 +192,24 @@ def analyzeAnnouncement(message):
             'emoji': emoji,
             'pings': pings,
             'formattingamount': formnum,
+            'lines': len(re.findall(r'\n', temp)),
             'words': len(temp.split()),
-            'links': links
+            'links': links,
             }
 
 async def analyzePost(message, resultschn):
     ares = analyzeAnnouncement(message.content)
-    warnmess = discord.Embed(color = 0xcfc829)
+    if ares['length'] > 400 or ares['lines'] > 8:
+        warnmess = discord.Embed(color = 0xcc8034)
+        warnmess.add_field(name = 'Message Link', value = msg.jump_url, inline = False)
+    else:
+        warnmess = discord.Embed(color = 0xcfc829)
     warnmess.title = 'Post Stats'
     warnmess.add_field(name = 'User', value = message.author.mention)
     warnmess.add_field(name = 'Channel', value = message.channel.name, inline = False)
     warnmess.add_field(name = 'Length', value = ares['length'])
     warnmess.add_field(name = 'Words', value = ares['words'])
+    warnmess.add_field(name = 'Lines', value = ares['lines'])
     warnmess.add_field(name = 'Formatting Used', value = ares['formattingamount'])
     if len(ares['pings']) != 0:
         warnmess.add_field(name = 'Pings Used', value = '\n'.join(ares['pings']))
