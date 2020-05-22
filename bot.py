@@ -201,7 +201,7 @@ async def analyzePost(message, resultschn):
     ares = analyzeAnnouncement(message.content)
     if ares['length'] > 400 or ares['lines'] > 8:
         warnmess = discord.Embed(color = 0xcc8034)
-        warnmess.add_field(name = 'Message Link', value = msg.jump_url, inline = False)
+        warnmess.add_field(name = 'Message Link', value = message.jump_url, inline = False)
     else:
         warnmess = discord.Embed(color = 0xcfc829)
     warnmess.title = 'Post Stats'
