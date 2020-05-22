@@ -192,14 +192,14 @@ def analyzeAnnouncement(message):
             'emoji': emoji,
             'pings': pings,
             'formattingamount': formnum,
-            'lines': len(re.findall(r'\n', temp)),
+            'lines': len(re.findall(r'\n', temp)) + 1,
             'words': len(temp.split()),
             'links': links,
             }
 
 async def analyzePost(message, resultschn):
     ares = analyzeAnnouncement(message.content)
-    if ares['length'] > 400 or ares['lines'] > 8:
+    if ares['length'] > 400 or ares['lines'] > 7:
         warnmess = discord.Embed(color = 0xcc8034)
         warnmess.add_field(name = 'Message Link', value = message.jump_url, inline = False)
     else:
