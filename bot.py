@@ -241,7 +241,7 @@ def addNote(userID, modID, note):
 def getNotes(userID): # Returns a list of mod/note/timestamp sequences
     data = db.one('SELECT notes FROM usernotes WHERE id = %(ids)s', ids = userID)
 
-    if data == None:
+    if data == None or data == '':
         return []
 
     res = data.split('==X==')
