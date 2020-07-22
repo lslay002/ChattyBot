@@ -301,7 +301,11 @@ async def sendNotes(userID, channel):
         ]
 
     warnmess = discord.Embed(color = colors[len(notes)] if len(notes) < len(colors) else colors[-1])
-    warnmess.title = 'Notes for <@%s>' % str(userID)
+    warnmess.title = 'Notes for User ID @%s' % str(userID)
+
+    temp = client.get_user(int(userID))
+    if temp != None:
+        warnmess.add_field(name = 'User Name', value = temp.name, inline = False)
 
     if linked != []:
         warnmess.add_field(name = 'Reddit' if len(linked) == 1 else 'Reddits', value = ', '.join(linked), inline = False)
@@ -311,7 +315,7 @@ async def sendNotes(userID, channel):
     for tup in notes:
         mod = client.get_user(int(tup[0]))
         mod = mod.name if mod != None else '<@%s>' % str(tup[0])
-        timestamp = time.gmtime(tup[2])
+        timestamp = time.gmtime(int(tup[2]))
         timestamp = '%d/%d/%d' % (timestamp.tm_mon, timestamp.tm_mday, timestamp.tm_year)
         contents += "**Note by %s - %s**\n%s" % (mod, timestamp, tup[1])
 
@@ -326,7 +330,7 @@ async def sendNotes(userID, channel):
 
     while remainder != '':
         warnmess = discord.Embed(color = colors[len(notes)] if len(notes) < len(colors) else colors[-1])
-        warnmess.title = 'Notes for <@%s>: Cont...' % str(userID)
+        warnmess.title = 'Notes for User ID @%s: Cont...' % str(userID)
 
         if len(remainder) > 1000:
             contents = remainder[:1000]
