@@ -15,3 +15,7 @@ announcechn = 666388961303855115
 
 # Settings for ;clear
 reactemote = 646457676196347906
+
+# Settings that determine behavior
+
+warningPreviewLen = 100
