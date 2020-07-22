@@ -263,7 +263,7 @@ def linkAcct(userID, acctname): # Returns true if added, False if the name is in
     controlflow = db.one('SELECT linkedact FROM usernotes WHERE id = %(ids)s', ids = userID)
     
     if controlflow == None:
-        db.run("INSERT INTO usernotes VALUES (%(ids)s, %(notes)s, ''", ids = userID, notes = acctname)
+        db.run("INSERT INTO usernotes VALUES (%(ids)s, %(notes)s, '')", ids = userID, notes = acctname)
     elif controlflow == '':
         db.run("UPDATE usernotes SET linkedact = %(notes)s WHERE id = %(ids)s", ids = userID, notes = acctname)
     else:
