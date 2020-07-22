@@ -8,6 +8,7 @@ import asyncio
 import os
 import re
 import postgres
+import time
 import settings
 from discord.utils import get
 
@@ -65,6 +66,7 @@ db.run("CREATE TABLE IF NOT EXISTS forbidden (words text)")
 db.run("CREATE TABLE IF NOT EXISTS vile (words text)")
 db.run("CREATE TABLE IF NOT EXISTS automute (words text)")
 db.run("CREATE TABLE IF NOT EXISTS tempbans (id bigint PRIMARY KEY, time int)")
+db.run("CREATE TABLE IF NOT EXISTS usernotes (id bigint PRIMARY KEY, linkedact text, notes text)")
 
 client = discord.Client()
 mainServer = None
@@ -219,8 +221,125 @@ async def analyzePost(message, resultschn):
         warnmess.add_field(name = 'Reddit Link', value = '\n'.join(ares['links']), inline = False)
     await resultschn.send(embed = warnmess)
 
+# Functions to work with usernotes
+def addNote(userID, modID, note):
+    '''
+        INSERT INTO usernotes SELECT %(id)s, '', '' WHERE NOT EXISTS(SELECT 1 FROM usernotes WHERE id = %(id)s)
+        UPDATE usernotes SET notes = notes || '==X==' || %(mod)s || '////' || %(note)s WHERE id = %(id)s
+        INSERT INTO usernotes VALUES (33, '', 11 || '////' || 'Hello')
+    '''
+    controlflow = db.one('SELECT notes FROM usernotes WHERE id = %(ids)s', ids = userID)
+    
+    if controlflow == None:
+        db.run("INSERT INTO usernotes VALUES (%(ids)s, '', %(mod)s || '////' || %(notes)s || '////' || %(times)s)",
+               ids = userID, mod = modID, notes = note, times = time.time())
+    elif controlflow == '':
+        db.run("UPDATE usernotes SET notes = %(mod)s || '////' || %(notes)s || '////' || %(times)s WHERE id = %(ids)s",
+               ids = userID, mod = modID, notes = note, times = time.time())
+    else:
+        db.run("UPDATE usernotes SET notes = notes || '==X==' || %(mod)s || '////' || %(notes)s || '////' || %(times)s WHERE id = %(ids)s",
+               ids = userID, mod = modID, notes = note, times = time.time())
+
+def getNotes(userID): # Returns a list of mod/note/timestamp sequences
+    data = db.one('SELECT notes FROM usernotes WHERE id = %(ids)s', ids = userID)
+
+    if data == None:
+        return []
+
+    res = data.split('==X==')
+
+    for x in range(len(res)):
+        res[x] = res[x].split('////')
+
+    return res
+
+def linkAcct(userID, acctname): # Returns true if added, False if the name is invalid
+    redditusernameregex = r'^(?:/[Uu]/)?([\w-]{3,})$'
+    username = re.search(redditusernameregex, acctname)
+
+    if username == None:
+        return False
+    
+    acctname = username.group(1)
+    
+    controlflow = db.one('SELECT notes FROM linkedact WHERE id = %(ids)s', ids = userID)
+    
+    if controlflow == None:
+        db.run("INSERT INTO usernotes VALUES (%(ids)s, %(notes)s, ''", ids = userID, notes = acctname)
+    elif controlflow == '':
+        db.run("UPDATE usernotes SET linkedact = %(notes)s WHERE id = %(ids)s", ids = userID, notes = acctname)
+    else:
+        db.run("UPDATE usernotes SET linkedact = linkedact || ' ' || %(notes)s WHERE id = %(ids)s", ids = userID, notes = acctname)
+
+    return True
+
+def getLinkedAccts(userID): # Returns a list associated usernames
+    data = db.one('SELECT linkedact FROM usernotes WHERE id = %(ids)s', ids = userID)
+
+    if data == None:
+        return []
+
+    res = data.split()
+
+    return res
+
+async def sendNotes(userID, channel):
+    linked = getLinkedAccts(userID)
+    notes = getNotes(userID)
+
+    colors = [
+            0x48db9c,
+            0xa3f7d3,
+            0x88d1b1,
+            0x81c7a8,
+            0x74b397,
+            0x659c83,
+            0x54806c,
+            0x476e5c,
+            0x375748,
+            0x2a4237,
+        ]
+
+    warnmess = discord.Embed(color = colors[len(notes)] if len(notes) < len(colors) else colors[-1])
+    warnmess.title = 'Notes for <@%s>' % str(userID)
+
+    if linked != []:
+        warnmess.add_field(name = 'Reddit' if len(linked) == 1 else 'Reddits', value = ', '.join(linked), inline = False)
+
+    contents = ''
+    remainder = ''
+    for tup in notes:
+        mod = client.get_user(int(tup[0]))
+        mod = mod.name if mod != None else '<@%s>' % str(tup[0])
+        timestamp = time.gmtime(tup[2])
+        timestamp = '%d/%d/%d' % (timestamp.tm_mon, timestamp.tm_mday, timestamp.tm_year)
+        contents += "**Note by %s - %s**\n%s" % (mod, timestamp, tup[1])
+
+    if len(contents) > 1000:
+        remainder = contents[1000:]
+        contents = contents[:1000]
+
+    if contents != '':
+        warnmess.add_field(name = 'Notes', value = contents, inline = False)
+
+    await channel.send(embed = warnmess)
+
+    while remainder != '':
+        warnmess = discord.Embed(color = colors[len(notes)] if len(notes) < len(colors) else colors[-1])
+        warnmess.title = 'Notes for <@%s>: Cont...' % str(userID)
+
+        if len(remainder) > 1000:
+            contents = remainder[:1000]
+            remainder = remainder[1000:]
+
+        warnmess.add_field(name = 'Notes', value = contents, inline = False)
+
+        await channel.send(embed = warnmess)
+
 # Helper method to ban users and send messages.
 async def banUser(user, guild, time = -1, reason = None, message =  None):
+    bannote = 'Banned'
+    
     if message != None:
         try:
             targetchn = user.dm_channel
@@ -238,6 +357,10 @@ async def banUser(user, guild, time = -1, reason = None, message =  None):
 
     if time != -1:
         db.run("INSERT INTO tempbans VALUES (%(newid)s, %(duration)s)", newid = user.id, duration = time)
+        bannote = 'Tempbanned'
+
+    if reason != None:
+        bannote += " - " + reason
     
     warnmess = discord.Embed(color = 0x810e0e)
     warnmess.title = 'User Banned'
@@ -248,6 +371,8 @@ async def banUser(user, guild, time = -1, reason = None, message =  None):
     if reason != None:
         warnmess.add_field(name = 'Reason', value = reason, inline = False)
     await logChn.send(embed = warnmess)
+
+    addNote(user.id, client.user.id, bannote)
 
 # Unbanning functions, seperated to allow code reuse.
 async def unbanUser(userid):
@@ -420,6 +545,32 @@ async def on_message(msg):
                     targetchn = target.dm_channel
                 await targetchn.send(' '.join(splitmes[2:]))
                 await msg.channel.send('Message sent.')
+            elif splitmes[0] == ';note':
+                if len(splitmes) == 1:
+                    await msg.channel.send('Which user?')
+                    return
+                if not str(splitmes[1]).isdigit():
+                    await msg.channel.send('Please use a UserID.')
+                    return
+                if len(splitmes) == 2:
+                    await sendNotes(splitmes[1], msg.channel)
+                    return
+                addNote(splitmes[1], msg.author.id, ' '.join(splitmes[2:])
+                await msg.channel.send('Note Added.')
+            elif splitmes[0] == ';link':
+                if len(splitmes) == 1:
+                    await msg.channel.send('Which user?')
+                    return
+                if len(splitmes) == 2:
+                    await msg.channel.send('Which Reddit account?')
+                    return
+                if not str(splitmes[1]).isdigit():
+                    await msg.channel.send('Please use a UserID.')
+                    return
+                if linkAcct(splitmes[1], splitmes[2]):
+                        await msg.channel.send('Account Linked.')
+                else:
+                        await msg.channel.send('Invalid Reddit Username.')
             elif splitmes[0] == ';echo':
                 if len(splitmes) == 1:
                     await msg.channel.send('Where would you like to send a message to?')
@@ -575,6 +726,9 @@ async def on_message(msg):
         warnmess.add_field(name = 'User', value = msg.author.mention)
         warnmess.add_field(name = 'Words Used', value = cdw)
         warnmess.add_field(name = 'Message Link', value = msg.jump_url, inline = False)
+        if settings.warningPreviewLen != 0:
+            preview = msg.content if len(msg.content) < settings.warningPreviewLen else msg.content[:settings.warningPreviewLen] + '...'
+            warnmess.add_field(name = 'Preview', value = preview)
         await commandChn.send(embed = warnmess)
 
     # Check mentions of a message and send messages when needed

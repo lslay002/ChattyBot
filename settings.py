@@ -13,3 +13,7 @@ appealMes = "You may appeal your ban here: <https://old.reddit.com/message/compo
 announcechn = 688943881445703710
 
 reactemote = 671883056617095179
+
+# Settings that determine behavior
+
+warningPreviewLen = 100
