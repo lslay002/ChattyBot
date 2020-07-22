@@ -245,7 +245,7 @@ def addNote(userID, modID, note):
 def getNotes(userID): # Returns a list of mod/note/timestamp sequences
     data = db.one('SELECT notes FROM usernotes WHERE id = %(ids)s', ids = userID)
 
-    if data == None:
+    if data == None or data == '':
         return []
 
     res = data.split('==X==')
@@ -267,7 +267,7 @@ def linkAcct(userID, acctname): # Returns true if added, False if the name is in
     controlflow = db.one('SELECT linkedact FROM usernotes WHERE id = %(ids)s', ids = userID)
     
     if controlflow == None:
-        db.run("INSERT INTO usernotes VALUES (%(ids)s, %(notes)s, ''", ids = userID, notes = acctname)
+        db.run("INSERT INTO usernotes VALUES (%(ids)s, %(notes)s, '')", ids = userID, notes = acctname)
     elif controlflow == '':
         db.run("UPDATE usernotes SET linkedact = %(notes)s WHERE id = %(ids)s", ids = userID, notes = acctname)
     else:
