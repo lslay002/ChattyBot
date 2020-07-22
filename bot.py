@@ -770,6 +770,9 @@ async def on_message(msg):
                         warnmess.add_field(name = 'User', value = msg.author.mention)
                         warnmess.add_field(name = 'Words Used', value = chkwords)
                         warnmess.add_field(name = 'Message Link', value = msg.jump_url, inline = False)
+                        if settings.warningPreviewLen != 0:
+                            preview = msg.content if len(msg.content) < settings.warningPreviewLen else msg.content[:settings.warningPreviewLen] + '...'
+                            warnmess.add_field(name = 'Preview', value = preview)
 
                         if flag == 'l':
                             await logChn.send(embed = warnmess)
