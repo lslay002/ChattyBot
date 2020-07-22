@@ -262,14 +262,14 @@ def linkAcct(userID, acctname): # Returns true if added, False if the name is in
     
     acctname = username.group(1)
     
-    controlflow = db.one('SELECT notes FROM linkedacct WHERE id = %(ids)s', ids = userID)
+    controlflow = db.one('SELECT linkedact FROM usernotes WHERE id = %(ids)s', ids = userID)
     
     if controlflow == None:
         db.run("INSERT INTO usernotes VALUES (%(ids)s, %(notes)s, ''", ids = userID, notes = acctname)
     elif controlflow == '':
-        db.run("UPDATE usernotes SET linkedacct = %(notes)s WHERE id = %(ids)s", ids = userID, notes = acctname)
+        db.run("UPDATE usernotes SET linkedact = %(notes)s WHERE id = %(ids)s", ids = userID, notes = acctname)
     else:
-        db.run("UPDATE usernotes SET linkedacct = linkedact || ' ' || %(notes)s WHERE id = %(ids)s", ids = userID, notes = acctname)
+        db.run("UPDATE usernotes SET linkedact = linkedact || ' ' || %(notes)s WHERE id = %(ids)s", ids = userID, notes = acctname)
 
     return True
 
