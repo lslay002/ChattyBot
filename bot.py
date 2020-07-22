@@ -256,9 +256,12 @@ def getNotes(userID): # Returns a list of mod/note/timestamp sequences
 def linkAcct(userID, acctname): # Returns true if added, False if the name is invalid
     redditusernameregex = r'^(?:/[Uu]/)?([\w-]{3,})$'
     username = re.search(redditusernameregex, acctname)
-
+    print(acctname)
+    print(username)
     if username == None:
         return False
+    
+    print(username.group(1))
     
     acctname = username.group(1)
     
@@ -305,7 +308,7 @@ async def sendNotes(userID, channel):
 
     temp = client.get_user(int(userID))
     if temp != None:
-        warnmess.add_field(name = 'User Name', value = temp.name, inline = False)
+        warnmess.add_field(name = 'Username', value = temp.name, inline = False)
 
     if linked != []:
         warnmess.add_field(name = 'Reddit' if len(linked) == 1 else 'Reddits', value = ', '.join(linked), inline = False)
@@ -317,7 +320,9 @@ async def sendNotes(userID, channel):
         mod = mod.name if mod != None else '<@%s>' % str(tup[0])
         timestamp = time.gmtime(float(tup[2]))
         timestamp = '%d/%d/%d' % (timestamp.tm_mon, timestamp.tm_mday, timestamp.tm_year)
-        contents += "**Note by %s - %s**\n%s" % (mod, timestamp, tup[1])
+        contents += "**Note by %s - %s**\n%s\n\n" % (mod, timestamp, tup[1])
+
+    contents = contents[:-2]
 
     if len(contents) > 1000:
         remainder = contents[1000:]
