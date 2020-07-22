@@ -254,7 +254,7 @@ def getNotes(userID): # Returns a list of mod/note/timestamp sequences
     return res
 
 def linkAcct(userID, acctname): # Returns true if added, False if the name is invalid
-    redditusernameregex = r'^(?:/[Uu]/)?([\w-]{3,})$'
+    redditusernameregex = r'(?:/[Uu]/)?([\w-]{3,})'
     username = re.search(redditusernameregex, acctname)
     print(acctname)
     print(username)
