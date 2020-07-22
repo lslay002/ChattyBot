@@ -555,7 +555,7 @@ async def on_message(msg):
                 if len(splitmes) == 2:
                     await sendNotes(splitmes[1], msg.channel)
                     return
-                addNote(splitmes[1], msg.author.id, ' '.join(splitmes[2:])
+                addNote(splitmes[1], msg.author.id, ' '.join(splitmes[2:]))
                 await msg.channel.send('Note Added.')
             elif splitmes[0] == ';link':
                 if len(splitmes) == 1:
