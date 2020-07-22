@@ -301,7 +301,7 @@ async def sendNotes(userID, channel):
         ]
 
     warnmess = discord.Embed(color = colors[len(notes)] if len(notes) < len(colors) else colors[-1])
-    warnmess.title = 'Notes for User ID @%s' % str(userID)
+    warnmess.title = 'Notes for User ID %s' % str(userID)
 
     temp = client.get_user(int(userID))
     if temp != None:
@@ -330,7 +330,7 @@ async def sendNotes(userID, channel):
 
     while remainder != '':
         warnmess = discord.Embed(color = colors[len(notes)] if len(notes) < len(colors) else colors[-1])
-        warnmess.title = 'Notes for User ID @%s: Cont...' % str(userID)
+        warnmess.title = 'Notes for User ID %s: Cont...' % str(userID)
 
         if len(remainder) > 1000:
             contents = remainder[:1000]
