@@ -46,6 +46,8 @@ helptext = (
     ';setm - Add a word to automute.\n'
     ';rmm - Remove a word from automute.\n'
     ';send <UserID> <Message> - Send a message to a user with Chatty\n'
+    ';note <UserID> <Note (optional)> - With optional note: Make a note on the iven user. Without optional note: Retrieve notes on given user.\n'
+    ';link <UserID> <Reddit Username> - Link a user to a Reddit username\n'
     ';echo <ChannelID> <Message> - Send a message to a channel with Chatty\n'
     ';perma <UserID> - Take a user off Chatty\'s auto-unban.\n'
     ';ban <UserID> <Reason (optional)> - Bans the given user with a message.\n'
@@ -674,6 +676,11 @@ async def on_message(msg):
             #else:
             #    await commandChn.send('What do I do with this?')
         return
+
+    # Auto note things in the LogChn that mention users that aren't bot generated
+    if not msg.author.bot and msg.channel.id == LOGCHNNUM:
+        for mention in msg.mentions:
+            addNote(mention.id, msg.author.id, msg.content)
         
     # If from a bot or the mods or in the Muted Channel, ignore
     if msg.author.bot or get(msg.author.roles, name = MODROLE) or msg.channel.id == settings.autoCallChn:
