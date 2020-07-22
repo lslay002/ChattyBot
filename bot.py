@@ -315,7 +315,7 @@ async def sendNotes(userID, channel):
     for tup in notes:
         mod = client.get_user(int(tup[0]))
         mod = mod.name if mod != None else '<@%s>' % str(tup[0])
-        timestamp = time.gmtime(int(tup[2]))
+        timestamp = time.gmtime(float(tup[2]))
         timestamp = '%d/%d/%d' % (timestamp.tm_mon, timestamp.tm_mday, timestamp.tm_year)
         contents += "**Note by %s - %s**\n%s" % (mod, timestamp, tup[1])
 
