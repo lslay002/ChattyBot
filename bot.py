@@ -254,25 +254,22 @@ def getNotes(userID): # Returns a list of mod/note/timestamp sequences
     return res
 
 def linkAcct(userID, acctname): # Returns true if added, False if the name is invalid
-    redditusernameregex = r'(?:/[Uu]/)?([\w-]{3,})'
+    redditusernameregex = r'^(?:/[Uu]/)?([\w-]{3,})$'
     username = re.search(redditusernameregex, acctname)
-    print(acctname)
-    print(username)
+    
     if username == None:
         return False
     
-    print(username.group(1))
-    
     acctname = username.group(1)
     
-    controlflow = db.one('SELECT notes FROM linkedact WHERE id = %(ids)s', ids = userID)
+    controlflow = db.one('SELECT notes FROM linkedacct WHERE id = %(ids)s', ids = userID)
     
     if controlflow == None:
         db.run("INSERT INTO usernotes VALUES (%(ids)s, %(notes)s, ''", ids = userID, notes = acctname)
     elif controlflow == '':
-        db.run("UPDATE usernotes SET linkedact = %(notes)s WHERE id = %(ids)s", ids = userID, notes = acctname)
+        db.run("UPDATE usernotes SET linkedacct = %(notes)s WHERE id = %(ids)s", ids = userID, notes = acctname)
     else:
-        db.run("UPDATE usernotes SET linkedact = linkedact || ' ' || %(notes)s WHERE id = %(ids)s", ids = userID, notes = acctname)
+        db.run("UPDATE usernotes SET linkedacct = linkedact || ' ' || %(notes)s WHERE id = %(ids)s", ids = userID, notes = acctname)
 
     return True
 
