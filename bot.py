@@ -339,6 +339,9 @@ async def sendNotes(userID, channel):
         if len(remainder) > 1000:
             contents = remainder[:1000]
             remainder = remainder[1000:]
+        else:
+            contents = remainder
+            remainder = ''
 
         warnmess.add_field(name = 'Notes', value = contents, inline = False)
 
