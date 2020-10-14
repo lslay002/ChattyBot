@@ -45,6 +45,9 @@ helptext = (
     ';getm - What words are being automuted.\n'
     ';setm - Add a word to automute.\n'
     ';rmm - Remove a word from automute.\n'
+    ';getex - Which users are excepted from the filter.\n'
+    ';setex - Add a user excepted from the filter.\n'
+    ';rmex - Remove a user excepted from the filter.\n'
     ';send <UserID> <Message> - Send a message to a user with Chatty\n'
     ';note <UserID> <Note (optional)> - With optional note: Make a note on the iven user. Without optional note: Retrieve notes on given user.\n'
     ';link <UserID> <Reddit Username> - Link a user to a Reddit username\n'
@@ -61,6 +64,7 @@ warninglist = []
 removelist = []
 mutelist = []
 watchlist = {}
+exceptionlist = []
 mention_dict = loadMentions()
 keywordsFile = loadKeywords()
 db = postgres.Postgres(url = os.environ.get('DATABASE_URL'))
@@ -69,6 +73,7 @@ db.run("CREATE TABLE IF NOT EXISTS vile (words text)")
 db.run("CREATE TABLE IF NOT EXISTS automute (words text)")
 db.run("CREATE TABLE IF NOT EXISTS tempbans (id bigint PRIMARY KEY, time int)")
 db.run("CREATE TABLE IF NOT EXISTS usernotes (id bigint PRIMARY KEY, linkedact text, notes text)")
+db.run("CREATE TABLE IF NOT EXISTS exempteds (id bigint)")
 
 client = discord.Client()
 mainServer = None
@@ -308,6 +313,9 @@ async def sendNotes(userID, channel):
     if linked != []:
         warnmess.add_field(name = 'Reddit' if len(linked) == 1 else 'Reddits', value = ', '.join(linked), inline = False)
 
+    if int(userID) in exceptionlist:
+        warnmess.add_field(name = 'Exempted', value = 'from regular filters', inline = False)
+
     contents = ''
     remainder = ''
     for tup in notes:
@@ -414,7 +422,7 @@ async def unbanLoop():
 @client.event
 async def on_message(msg):
     # Handle commands
-    global warninglist, composedwarning, watchlist, removelist, composedremove, mutelist, composedmute
+    global warninglist, composedwarning, watchlist, removelist, composedremove, mutelist, composedmute, exceptionlist
 
     if not msg.author.bot and msg.channel.type == discord.ChannelType.private:
         attach = ''
@@ -507,6 +515,30 @@ async def on_message(msg):
                 db.run("DELETE FROM automute WHERE words=(%(old)s)", old = splitmes[1])
                 composedmute = composeWarning(mutelist, False)
                 await commandChn.send('Word removed.')
+                
+            if splitmes[0] == ';getex':
+                await commandChn.send(', '.join(map(lambda x: '<@' + str(x) + '>', exceptionlist)))
+            elif splitmes[0] == ';setex':
+                if len(splitmes) == 1:
+                    await commandChn.send('What user would you like to exempt?')
+                    return
+                if not str(splitmes[1]).isdigit():
+                    await msg.channel.send('Please use a UserID.')
+                    return
+                exceptionlist.append(int(splitmes[1]))
+                db.run("INSERT INTO exempteds VALUES (%(new)s)", new = splitmes[1])
+                await commandChn.send('User exempted.')
+            elif splitmes[0] == ';rmex':
+                if len(splitmes) == 1:
+                    await commandChn.send('What user would you like to remove from the exemption list?')
+                    return
+                if not str(splitmes[1]).isdigit():
+                    await msg.channel.send('Please use a UserID.')
+                    return
+                exceptionlist.remove(int(splitmes[1]))
+                db.run("DELETE FROM exempteds WHERE id=(%(old)s)", old = splitmes[1])
+                await commandChn.send('User removed.')
+                
             elif splitmes[0] == ';perma':
                 if len(splitmes) == 1:
                     await commandChn.send('What user would you no longer like to come back?')
@@ -672,8 +704,6 @@ async def on_message(msg):
                     current = await msg.channel.history(limit = 1, before = current).next()
             elif splitmes[0] == ';help':
                 await commandChn.send(helptext)
-            #else:
-            #    await commandChn.send('What do I do with this?')
         return
 
     # Auto note things in the LogChn that mention users that aren't bot generated
@@ -730,29 +760,26 @@ async def on_message(msg):
                 return
 
     # Analyze the message for warning words, notify mods if any appear
-    dangerwords = filter(composedwarning.match, msg.content.split())
+    if msg.author.id not in exceptionlist:
+        dangerwords = filter(composedwarning.match, msg.content.split())
 
-    cdw = ', '.join(map(str, dangerwords))
-    if cdw != '':
-        warnmess = discord.Embed()
-        warnmess.title = 'Warning Report'
-        warnmess.add_field(name = 'User', value = msg.author.mention)
-        warnmess.add_field(name = 'Words Used', value = cdw)
-        warnmess.add_field(name = 'Message Link', value = msg.jump_url, inline = False)
-        if settings.warningPreviewLen != 0:
-            preview = msg.content if len(msg.content) < settings.warningPreviewLen else msg.content[:settings.warningPreviewLen] + '...'
-            warnmess.add_field(name = 'Preview', value = preview)
-        await commandChn.send(embed = warnmess)
+        cdw = ', '.join(map(str, dangerwords))
+        if cdw != '':
+            warnmess = discord.Embed()
+            warnmess.title = 'Warning Report'
+            warnmess.add_field(name = 'User', value = msg.author.mention)
+            warnmess.add_field(name = 'Words Used', value = cdw)
+            warnmess.add_field(name = 'Message Link', value = msg.jump_url, inline = False)
+            if settings.warningPreviewLen != 0:
+                preview = msg.content if len(msg.content) < settings.warningPreviewLen else msg.content[:settings.warningPreviewLen] + '...'
+                warnmess.add_field(name = 'Preview', value = preview)
+            await commandChn.send(embed = warnmess)
 
     # Check mentions of a message and send messages when needed
     for mention in msg.role_mentions:
         val = str(mention.id)
         if val in mention_dict:
             await msg.channel.send('\n'.join(map(str, mention_dict[val])))
-
-    # Do things involving the announcements
-    if msg.channel.id == settings.announcechn:
-        await analyzePost(msg, commandChn)
 
     # Handle Channel Specific catchlists
     if str(msg.channel.id) in csCommands:
@@ -801,7 +828,7 @@ async def on_message(msg):
 @client.event
 async def on_ready():
     global commandChn, warninglist, composedwarning, reportChn, logChn, mainServer, composedremove, removelist
-    global mutelist, composedmute, removeChn
+    global mutelist, composedmute, removeChn, exceptionlist 
     commandChn = client.get_channel(COMMANDCHNNUM)
     reportChn = client.get_channel(REPORTCHNNUM)
     logChn = client.get_channel(LOGCHNNUM)
@@ -813,6 +840,7 @@ async def on_ready():
     composedremove = composeWarning(removelist)
     mutelist = db.all('SELECT words FROM automute')
     composedmute = composeWarning(mutelist, False)
+    exceptionlist = db.all('SELECT id FROM exempteds')
     print('Logged in as ' + client.user.name)
 
 # runs the app
