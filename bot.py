@@ -518,7 +518,7 @@ async def on_message(msg):
                 await commandChn.send('Word removed.')
                 
             if splitmes[0] == ';getex':
-                await commandChn.send(', '.join(map(lambda x: '<@' + x + '>', exceptionlist)))
+                await commandChn.send(', '.join(map(lambda x: '<@' + str(x) + '>', exceptionlist)))
             elif splitmes[0] == ';setex':
                 if len(splitmes) == 1:
                     await commandChn.send('What user would you like to exempt?')
@@ -526,7 +526,7 @@ async def on_message(msg):
                 if not str(splitmes[1]).isdigit():
                     await msg.channel.send('Please use a UserID.')
                     return
-                exceptionlist.append(splitmes[1])
+                exceptionlist.append(int(splitmes[1]))
                 db.run("INSERT INTO exempteds VALUES (%(new)s)", new = splitmes[1])
                 await commandChn.send('User exempted.')
             elif splitmes[0] == ';rmex':
@@ -536,7 +536,7 @@ async def on_message(msg):
                 if not str(splitmes[1]).isdigit():
                     await msg.channel.send('Please use a UserID.')
                     return
-                exceptionlist.remove(splitmes[1])
+                exceptionlist.remove(int(splitmes[1]))
                 db.run("DELETE FROM exempteds WHERE id=(%(old)s)", old = splitmes[1])
                 await commandChn.send('User removed.')
                 
