@@ -727,13 +727,13 @@ async def on_message(msg):
                     return
                 composedRE = ' '.join(splitmes[1:])
                 nuum = composedRE.isdigit()
-                composedRE = re.compile(composedRE, re.I)
                 found = 0
                 startmes = 'Searching for users '
                 if nuum:
                     startmes = startmes + 'and discriminators '
                 startmes = startmes + 'that match Regex: ' + composedRE
                 await msg.channel.send(startmes)
+                composedRE = re.compile(composedRE, re.I)
                 for usr in msg.guild.members:
                     if nuum:
                         if re.search(composedRE, usr.discriminator):
