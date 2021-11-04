@@ -54,9 +54,11 @@ helptext = (
     ';echo <ChannelID> <Message> - Send a message to a channel with Chatty\n'
     ';perma <UserID> - Take a user off Chatty\'s auto-unban.\n'
     ';ban <UserID> <Reason (optional)> - Bans the given user with a message.\n'
+    ';sban <UserID> <Reason (optional)> - Bans the given user without a message.\n'
     ';tempban <UserID> <Ban Length> <Reason (optional)> - Bans the given user with a message for the given amount of time. Ban length can be in hours or of the form "XwXdXh"\n'
     ';banstatus <UserID> - returns how long a tempbanned user will remain banned.\n'
     ';unban <UserID> - Unbans the given user.\n'
+    ';locate <Regex> - Searches the user list for users with Names and Nicknames that match the given Regex. If the Regex given is a number, it also searches discriminators.\n'
     ';clear <MessageID (optional)> - Marks each message above this or the given message as read, until  hitting a marked message, or a message not sent by me.'
 )
 
@@ -654,6 +656,24 @@ async def on_message(msg):
                     await msg.channel.send('User not found.')
                     return
                 await banUser(target, msg.guild, -1, reason, bantext)
+            elif splitmes[0] == ';sban':
+                if len(splitmes) == 1:
+                    await msg.channel.send('Who would you like to ban?')
+                    return
+                if not str(splitmes[1]).isdigit():
+                    await msg.channel.send('Please use a UserID as a target of who to ban.')
+                    return
+                target = client.get_user(int(splitmes[1]))
+                if target == None:
+                    target = await client.fetch_user(int(splitmes[1]))
+                if len(splitmes) == 2:
+                    reason = None
+                else:
+                    reason = ' '.join(splitmes[2:])
+                if target == None:
+                    await msg.channel.send('User not found.')
+                    return
+                await banUser(target, msg.guild, -1, reason)
             elif splitmes[0] == ';tempban':
                 if len(splitmes) == 1:
                     await msg.channel.send('Who would you like to ban?')
@@ -702,6 +722,39 @@ async def on_message(msg):
                 while current.author == client.user and len(current.reactions) == 0:
                     await current.add_reaction(rxnimage)
                     current = await msg.channel.history(limit = 1, before = current).next()
+            elif splitmes[0] == ';locate':
+                if len(splitmes) == 1:
+                    await msg.channel.send('Who would you like to search for?')
+                    return
+                composedRE = ' '.join(splitmes[1:])
+                nuum = composedRE.isdigit()
+                found = 0
+                startmes = 'Searching for users '
+                if nuum:
+                    startmes = startmes + 'and discriminators '
+                startmes = startmes + 'that match Regex: ' + composedRE
+                await msg.channel.send(startmes)
+                composedRE = re.compile(composedRE, re.I)
+                for usr in msg.guild.members:
+                    if nuum:
+                        if re.search(composedRE, usr.discriminator):
+                            await msg.channel.send('User Discriminator Matched: ' + usr.mention)
+                            found += 1
+                            continue
+                    if re.search(composedRE, usr.name):
+                        await msg.channel.send('UserMatched: ' + usr.mention)
+                        found += 1
+                        continue
+                    if usr.nick and re.search(composedRE, usr.nick):
+                        await msg.channel.send('UserMatched: ' + usr.mention)
+                        found += 1
+                        continue
+                if found == 0:
+                    await msg.channel.send('No matching users found.')
+                elif found == 1:
+                    await msg.channel.send('1 user found.')
+                else:
+                    await msg.channel.send(str(found) + ' users found.')
             elif splitmes[0] == ';help':
                 await commandChn.send(helptext)
         return
