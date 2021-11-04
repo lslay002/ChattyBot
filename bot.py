@@ -726,7 +726,7 @@ async def on_message(msg):
                     await msg.channel.send('Who would you like to search for?')
                     return
                 composedRE = ' '.join(splitmes[1:])
-                nuum = composedRE.isDigit()
+                nuum = composedRE.isdigit()
                 found = 0
                 startmes = 'Searching for users '
                 if nuum:
