@@ -655,6 +655,24 @@ async def on_message(msg):
                     await msg.channel.send('User not found.')
                     return
                 await banUser(target, msg.guild, -1, reason, bantext)
+            elif splitmes[0] == ';sban':
+                if len(splitmes) == 1:
+                    await msg.channel.send('Who would you like to ban?')
+                    return
+                if not str(splitmes[1]).isdigit():
+                    await msg.channel.send('Please use a UserID as a target of who to ban.')
+                    return
+                target = client.get_user(int(splitmes[1]))
+                if target == None:
+                    target = await client.fetch_user(int(splitmes[1]))
+                if len(splitmes) == 2:
+                    reason = None
+                else:
+                    reason = ' '.join(splitmes[2:])
+                if target == None:
+                    await msg.channel.send('User not found.')
+                    return
+                await banUser(target, msg.guild, -1, reason)
             elif splitmes[0] == ';tempban':
                 if len(splitmes) == 1:
                     await msg.channel.send('Who would you like to ban?')
@@ -703,6 +721,36 @@ async def on_message(msg):
                 while current.author == client.user and len(current.reactions) == 0:
                     await current.add_reaction(rxnimage)
                     current = await msg.channel.history(limit = 1, before = current).next()
+            elif splitmes[0] == ';locate':
+                if len(splitmes) == 1:
+                    await msg.channel.send('Who would you like to search for?')
+                    return
+                composedRE = ' '.join(splitmes[1:])
+                nuum = composedRE.isDigit()
+                found = 0
+                startmes = 'Searching for users '
+                if nuum:
+                    startmes = startmes + 'and discriminators '
+                startmes = startmes + 'that match Regex: ' + composedRE
+                await msg.channel.send(startmes)
+                for usr in msg.guild.members:
+                    if nuum:
+                        if re.search(composedRE, usr.discriminator):
+                            await msg.channel.send('User Discriminator Matched: ' + usr.mention)
+                            found += 1
+                            continue
+                    if re.search(composedRE, usr.name):
+                        await msg.channel.send('UserMatched: ' + usr.mention)
+                        found += 1
+                        continue
+                    if re.search(composedRE, usr.nick):
+                        await msg.channel.send('UserMatched: ' + usr.mention)
+                        found += 1
+                        continue
+                if found == 0:
+                    msg.channel.send('No matching users found.')
+                else:
+                    msg.channel.send(str(found) + ' users found.')
             elif splitmes[0] == ';help':
                 await commandChn.send(helptext)
             #else:
