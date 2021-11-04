@@ -51,6 +51,7 @@ helptext = (
     ';echo <ChannelID> <Message> - Send a message to a channel with Chatty\n'
     ';perma <UserID> - Take a user off Chatty\'s auto-unban.\n'
     ';ban <UserID> <Reason (optional)> - Bans the given user with a message.\n'
+    ';sban <UserID> <Reason (optional)> - Bans the given user without a message.\n'
     ';tempban <UserID> <Ban Length> <Reason (optional)> - Bans the given user with a message for the given amount of time. Ban length can be in hours or of the form "XwXdXh"\n'
     ';banstatus <UserID> - returns how long a tempbanned user will remain banned.\n'
     ';unban <UserID> - Unbans the given user.\n'
@@ -750,9 +751,9 @@ async def on_message(msg):
                         found += 1
                         continue
                 if found == 0:
-                    msg.channel.send('No matching users found.')
+                    await msg.channel.send('No matching users found.')
                 else:
-                    msg.channel.send(str(found) + ' users found.')
+                    await msg.channel.send(str(found) + ' users found.')
             elif splitmes[0] == ';help':
                 await commandChn.send(helptext)
             #else:
