@@ -727,6 +727,7 @@ async def on_message(msg):
                     return
                 composedRE = ' '.join(splitmes[1:])
                 nuum = composedRE.isdigit()
+                composedRE = re.compile(composedRE, re.I)
                 found = 0
                 startmes = 'Searching for users '
                 if nuum:
