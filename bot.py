@@ -55,6 +55,7 @@ helptext = (
     ';tempban <UserID> <Ban Length> <Reason (optional)> - Bans the given user with a message for the given amount of time. Ban length can be in hours or of the form "XwXdXh"\n'
     ';banstatus <UserID> - returns how long a tempbanned user will remain banned.\n'
     ';unban <UserID> - Unbans the given user.\n'
+    ';locate <Regex> - Searches the user list for users with Names and Nicknames that match the given Regex. If the Regex given is a number, it also searches discriminators.\n'
     ';clear <MessageID (optional)> - Marks each message above this or the given message as read, until  hitting a marked message, or a message not sent by me.'
 )
 
