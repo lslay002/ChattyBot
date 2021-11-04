@@ -735,6 +735,7 @@ async def on_message(msg):
                 await msg.channel.send(startmes)
                 composedRE = re.compile(composedRE, re.I)
                 for usr in msg.guild.members:
+                    print(usr.name)
                     if nuum:
                         if re.search(composedRE, usr.discriminator):
                             await msg.channel.send('User Discriminator Matched: ' + usr.mention)
@@ -744,7 +745,7 @@ async def on_message(msg):
                         await msg.channel.send('UserMatched: ' + usr.mention)
                         found += 1
                         continue
-                    if re.search(composedRE, usr.nick):
+                    if usr.nick and re.search(composedRE, usr.nick):
                         await msg.channel.send('UserMatched: ' + usr.mention)
                         found += 1
                         continue
