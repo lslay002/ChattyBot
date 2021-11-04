@@ -737,7 +737,6 @@ async def on_message(msg):
                 await msg.channel.send(startmes)
                 composedRE = re.compile(composedRE, re.I)
                 for usr in msg.guild.members:
-                    print(usr.name)
                     if nuum:
                         if re.search(composedRE, usr.discriminator):
                             await msg.channel.send('User Discriminator Matched: ' + usr.mention)
@@ -753,6 +752,8 @@ async def on_message(msg):
                         continue
                 if found == 0:
                     await msg.channel.send('No matching users found.')
+                elif found == 1:
+                    await msg.channel.send('1 user found.')
                 else:
                     await msg.channel.send(str(found) + ' users found.')
             elif splitmes[0] == ';help':
