@@ -14,7 +14,7 @@ appealMes = "Questions about the ban? Join <SERVERINVITE> and message me. I'll g
 announcechn = 666388961303855115
 
 # Settings for ;clear
-reactemote = 646457676196347906
+reactemote = 1193497931261685840
 
 # Settings that determine behavior
 
