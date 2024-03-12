@@ -13,7 +13,7 @@ import settings
 from discord.utils import get
 
 # Establish settings and IO helpers
-MODROLE = "Mods"
+MODROLE = "Pokescouts"
 COMMANDCHNNUM = int(os.environ.get('COMMANDCHN'))
 REPORTCHNNUM = int(os.environ.get('REPORTCHN'))
 REMOVECHNNUM = int(os.environ.get('REMOVECHN'))
